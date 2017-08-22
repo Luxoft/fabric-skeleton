@@ -1,0 +1,39 @@
+###
+# Calls lower-level generators to make network dir
+###
+---
+
+- name: Cleanup network_dist
+  hosts: localhost
+  tasks:
+    - file:
+        state: absent
+        path: "../network_dist"
+    - file:
+        state: directory
+        path: "../network_dist"
+    - name: debug
+      debug:
+        msg: "{{groups['orderers']}}"
+
+- name: Create crypto-config from template
+  hosts: localhost
+  tasks:
+    - template: src=../generator/crypto-config.yaml.j2 dest=../network_dist/crypto-config.yaml
+
+- name: Create configtx file from template
+  hosts: localhost
+  tasks:
+    - template: src=../generator/configtx.yaml.j2 dest=../network_dist/configtx.yaml
+
+- name: Copy generator script into network_dist
+  hosts: localhost
+  tasks:
+    - template: src=../generator/generate.sh dest=../network_dist/generate.sh mode=a+rwx
+
+- name: Run generate.sh script
+  hosts: localhost
+  tasks:
+    - shell: ./generate.sh
+      args:
+        chdir: ../network_dist

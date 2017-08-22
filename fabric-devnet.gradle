@@ -1,0 +1,171 @@
+apply from: "fabric-deploy.gradle"
+
+def group_name = 'fabric-devnet'
+
+
+task debugNetworkUp(type: Exec) {
+    group = group_name
+
+    workingDir "$projectDir/network/local-debug"
+    commandLine 'sh', '-c', './fabric.sh up'
+
+    doLast { println("FABRIC-UP: Task completed") }
+}
+
+/**
+ * Run Fabric network
+ */
+task networkUp(type: Exec) {
+    group = group_name
+
+    workingDir "$projectDir/network/local"
+    commandLine 'sh', '-c', './fabric.sh up'
+
+    doLast { println("FABRIC-UP: Task completed") }
+}
+
+/**
+ * Stop Fabric network
+ */
+task networkDown(type: Exec) {
+    group = group_name
+    workingDir "$projectDir/network/local"
+    commandLine 'sh', '-c', './fabric.sh down'
+
+    doLast { println("FABRIC-DOWN: Task completed") }
+}
+
+/**
+ * Restart Fabric network
+ */
+task networkRestart(type: Exec) {
+    group = group_name
+    workingDir "$projectDir/network/local"
+    commandLine 'sh', '-c', './fabric.sh restart'
+
+    doLast { println("FABRIC-RESTART: Task completed") }
+}
+
+/**
+ * Clean Fabric network
+ */
+task networkClean(type: Exec) {
+    group = group_name
+    workingDir "$projectDir/network/local"
+    commandLine 'sh', '-c', './fabric.sh clean'
+
+    doLast { println("FABRIC-CLEAN: Task completed") }
+}
+
+/**
+ * Configure network using Fabric config descriptor
+ */
+task networkConfigure(type: JavaExec) {
+    group = group_name
+
+    workingDir "$projectDir"
+    classpath = sourceSets.main.runtimeClasspath
+    main = 'com.luxoft.fabric.config.Configurator'
+    args '--type'
+    args 'config'
+    args '--config'
+    args gradle.ext.fabric_config_path
+
+    doLast { println("FABRIC-CONFIG: Task completed") }
+}
+
+task debugNetworkConfigure(type: JavaExec) {
+    group = group_name
+
+    workingDir "$projectDir"
+    classpath = sourceSets.main.runtimeClasspath
+    main = 'com.luxoft.fabric.config.Configurator'
+    args '--type'
+    args 'config'
+    args '--config'
+    args 'fabric-debug.yaml'
+
+    doLast { println("FABRIC-CONFIG: Task completed") }
+}
+
+/**
+ * Deploy chaincodes using Fabric config descriptor
+ */
+task contractDeployAll(type: JavaExec) {
+    group = group_name
+
+    classpath = sourceSets.main.runtimeClasspath
+    main = 'com.luxoft.fabric.config.Configurator'
+    args '--type'
+    args 'deploy'
+    args '--config'
+    args gradle.ext.fabric_config_path
+
+    doLast { println("CHAINCODE-DEPLOY: all chaincodes from fabric.yaml") }
+}
+
+/**
+ * Deploy chaincodes using 'chaincodes' env variable
+ */
+task contractDeploy(type: JavaExec) {
+    group = group_name
+
+    classpath = sourceSets.main.runtimeClasspath
+    main = 'com.luxoft.fabric.config.Configurator'
+
+    def chaicodes = System.getenv("chaincodes")
+    if (chaicodes == null)
+        chaicodes = gradle.ext.chaincodes_toDeploy
+
+    chaicodes = chaicodes.split(" ")
+
+    args '--type'
+    args 'deploy'
+    args '--config'
+    args gradle.ext.fabric_config_path
+    args '--name'
+    args chaicodes
+
+    doLast { println("CHAINCODE-DEPLOY:" + chaicodes) }
+}
+
+/**
+ * Upgrade chaincodes using Fabric config descriptor
+ */
+task contractUpgradeAll(type: JavaExec) {
+    group = group_name
+
+    classpath = sourceSets.main.runtimeClasspath
+    main = 'com.luxoft.fabric.config.Configurator'
+    args '--type'
+    args 'upgrade'
+    args '--config'
+    args gradle.ext.fabric_config_path
+
+    doLast { println("UPGRADE: all chaincodes from fabric.yaml") }
+}
+
+/**
+ * Upgrade chaincodes using 'chaincodes' env variable
+ */
+task contractUpgrade(type: JavaExec) {
+    group = group_name
+
+    classpath = sourceSets.main.runtimeClasspath
+    main = 'com.luxoft.fabric.config.Configurator'
+
+    def chaicodes = System.getenv("chaincodes")
+    if (chaicodes == null)
+        chaicodes = gradle.ext.chaincodes_toUpgrade
+
+    chaicodes = chaicodes.split(" ")
+
+    args '--type'
+    args 'upgrade'
+    args '--config'
+    args gradle.ext.fabric_config_path
+    args '--name'
+    args chaicodes
+
+    doLast { println("FABRIC-UPGRADE:" + chaicodes) }
+}

@@ -1,0 +1,125 @@
+# When AWS cluster is ready for work, needs to set host groups from aws-dynamic inventory
+# This step is critically important to divide logic of blockchain and business nodes deployment from aws inventory
+---
+
+- name: Refresh inventory to have the actual one
+  hosts: localhost
+  tasks:
+    - meta: refresh_inventory
+
+#- name: Check hosts on start
+#  hosts: localhost
+#  tasks:
+#    - debug:
+#        msg: "{{ hostvars[item]['ansible_host'] }}"
+#      with_inventory_hostnames:
+#        - "tag_cluster_id_{{cluster_id}}"
+
+- name: Set host groups from AWS inventory
+  hosts: localhost
+  gather_facts: False
+  tasks:
+    - name: Add new cas to host group
+      add_host:
+        hostname: "ca{{item.0}}"
+        ansible_host: "{{ item.1 }}"
+        groupname: cas
+        ansible_ssh_private_key_file: "{{pem_path}}"
+        ansible_ssh_user: "{{user_name}}"
+        organisation_index: "{{ hostvars[item.1]['ec2_tag_organisation_index'] }}"
+      with_indexed_items: "{{ groups['tag_project_group_cas']|list }}"
+
+    - name: Add new orderers to host group
+      add_host:
+        hostname: "orderer{{item.0}}"
+        groupname: orderers
+        api_port: 7050
+        ansible_host: "{{ item.1 }}"
+        ansible_ssh_private_key_file: "{{pem_path}}"
+        ansible_ssh_user: "{{user_name}}"
+      with_indexed_items: "{{ groups['tag_project_group_orderers']|list }}"
+
+    - name: debug
+      debug:
+        msg: "{{groups['orderers']}}"
+
+    - name: Add new peers to host group
+      add_host:
+        hostname: "peer{{item.0}}"
+        ansible_host: "{{ item.1 }}"
+        api_port: 7051
+        groupname: peers
+        ansible_ssh_private_key_file: "{{pem_path}}"
+        ansible_ssh_user: "{{user_name}}"
+        organisation_index: "{{ hostvars[item.1]['ec2_tag_organisation_index'] }}"
+        peer_index: "{{ hostvars[item.1]['ec2_tag_peer_index'] }}"
+      with_indexed_items: "{{ groups['tag_project_group_peers']|list }}"
+
+    - name: Add new peers to host group by organisation
+      when: "groups['orderers'] | length > 1"
+      add_host:
+        hostname: "peer{{item.0}}"
+        ansible_host: "{{ item.1 }}"
+        api_port: 7051
+        groupname: "organisation{{hostvars[item.1]['ec2_tag_organisation_index']}}"
+        ansible_ssh_private_key_file: "{{pem_path}}"
+        ansible_ssh_user: "{{user_name}}"
+        organisation_index: "{{ hostvars[item.1]['ec2_tag_organisation_index'] }}"
+      with_indexed_items: "{{ groups['tag_project_group_peers']|list }}"
+
+    - name: Add new kafka to host group
+      when: "groups['orderers'] | length > 1"
+      add_host:
+        hostname: "kafka{{item.0}}"
+        ansible_host: "{{ item.1 }}"
+        groupname: kafka
+        ansible_ssh_private_key_file: "{{pem_path}}"
+        ansible_ssh_user: "{{user_name}}"
+        kafka_numeric_id: "{{ item.0 }}"
+      with_indexed_items: "{{ groups['tag_project_group_kafka']|list }}"
+
+    - name: Add new zookeeper to host group
+      when: "groups['orderers'] | length > 1"
+      add_host:
+        hostname: "zookeeper{{item.0}}"
+        ansible_host: "{{ item.1 }}"
+        groupname: zookeeper
+        ansible_ssh_private_key_file: "{{pem_path}}"
+        ansible_ssh_user: "{{user_name}}"
+        zookeeper_numeric_id: "{{ item.0 }}"
+      with_indexed_items: "{{ groups['tag_project_group_zookeeper']|list }}"
+
+    - name: Add monitoring to host group
+      when: monitoring_enabled
+      add_host:
+        hostname: "monitoring{{item.0}}"
+        ansible_host: "{{ item.1 }}"
+        groupname: monitoring
+        ansible_ssh_private_key_file: "{{pem_path}}"
+        ansible_ssh_user: "{{user_name}}"
+      with_indexed_items: "{{ groups['tag_project_group_monitoring']|list }}"
+
+    - name: Add ELK to host group
+      when: elk_enabled
+      add_host:
+        hostname: "elk{{item.0}}"
+        ansible_host: "{{ item.1 }}"
+        groupname: elk
+        ansible_ssh_private_key_file: "{{pem_path}}"
+        ansible_ssh_user: "{{user_name}}"
+      with_indexed_items: "{{ groups['tag_project_group_elk']|list }}"
+
+    - name: Add business nodes as hosts group
+      add_host:
+        hostname: "business_node{{item.0}}"
+        ansible_host: "{{ item.1 }}"
+        groupname: business_nodes
+        ansible_ssh_private_key_file: "{{pem_path}}"
+        ansible_ssh_user: "{{user_name}}"
+      with_indexed_items: "{{ groups['tag_project_group_business_nodes']|list }}"
+
+- name: Log groups to check they were created fine
+  hosts: localhost
+  tasks:
+    - debug:
+        msg: "{{ groups }}"

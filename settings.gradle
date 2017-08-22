@@ -1,0 +1,11 @@
+rootProject.name = 'fabric-skeleton'
+
+gradle.ext.project_group    = 'luxoft'
+gradle.ext.project_version  = '0.1'
+gradle.ext.project_launcher = 'com.luxoft.skeleton.Launcher'
+
+gradle.ext.pb_protocVersion = '3.0.2'
+gradle.ext.pb_protoVersion  = '3.0.0'
+gradle.ext.pb_gprcVersion   = '1.1.2'
+
+//include 'messages'

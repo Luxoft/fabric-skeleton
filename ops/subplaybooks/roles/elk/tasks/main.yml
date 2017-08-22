@@ -1,0 +1,63 @@
+---
+
+- name: Copy ELK configs
+  copy:
+    src: ./files/docker-elk
+    dest: /tmp
+    owner: ubuntu
+    group: docker
+    mode: "u=rw,g=rw,o=rw"
+  become: yes
+
+- name: Create a network
+  docker_network:
+    name: "elk"
+
+- name: E - Create ElasticSearch container
+  docker_container:
+    name: elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:5.5.0
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    timeout: 360
+    restart_policy: always
+    restart: yes
+    networks:
+      - name: "elk"
+    env:
+      ES_JAVA_OPTS: "-Xmx256m -Xms256m"
+    volumes:
+      - /tmp/docker-elk/elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+
+- name: L - Create Logstash container
+  docker_container:
+    name: logstash
+    image: docker.elastic.co/logstash/logstash:5.5.0
+    ports:
+      - "5000:5000"
+      - "12201:12201/udp"
+    timeout: 360
+    restart_policy: always
+    restart: yes
+    networks:
+      - name: "elk"
+    env:
+      LS_JAVA_OPTS: "-Xmx256m -Xms256m"
+    volumes:
+      - /tmp/docker-elk/logstash/config:/usr/share/logstash/config
+      - /tmp/docker-elk/logstash/pipeline:/usr/share/logstash/pipeline
+
+- name: K - Kibana
+  docker_container:
+    name: kibana
+    image: docker.elastic.co/kibana/kibana:5.5.0
+    ports:
+      - "5601:5601"
+    networks:
+      - name: "elk"
+    timeout: 360
+    restart_policy: always
+    restart: yes
+    volumes:
+      - /tmp/docker-elk/kibana/config:/usr/share/kibana/config

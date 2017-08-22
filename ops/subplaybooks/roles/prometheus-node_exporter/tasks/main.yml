@@ -1,0 +1,26 @@
+---
+- name: Copying binary file
+  copy:
+    src: "{{ role_path }}/files/node_exporter"
+    dest: /usr/bin/node_exporter
+    owner: root
+    group: root
+    mode: 0755
+  become: true
+  
+- name: Copying daemon config file
+  copy:
+    src: "{{ role_path }}/files/node_exporter.service"
+    dest: /etc/systemd/system/node_exporter.service
+    owner: root
+    group: root
+    mode: 0755
+  become: true
+  
+- name: Start daemon
+  systemd:
+    name: node_exporter.service
+    state: started
+    daemon_reload: yes
+    enabled: true
+  become: true

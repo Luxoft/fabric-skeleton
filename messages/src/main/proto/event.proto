@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+option java_package = "com.luxoft.skeleton.fabric.proto";
+option go_package = "main";
+option java_outer_classname = "TestEvents";
+
+package upgrade;
+
+enum Type
+{
+    DEFAULT = 0;
+    COMPANY = 1;
+    USER = 2;
+}

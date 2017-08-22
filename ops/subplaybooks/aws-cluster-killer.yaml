@@ -1,0 +1,35 @@
+####
+# Kills EC2 cluster with tagged cluster_id
+####
+---
+
+#- name: check list of ids of alive instances of cluster
+#  hosts: localhost
+#  tasks:
+#    - debug:
+#        msg: "[{% for host in groups['tag_cluster_id_' + cluster_id] %}
+#                '{{hostvars[host]['ec2_id']}}'
+#                {{ ',' if not loop.last else '' }}
+#              {% endfor %}]"
+#      when: "{{('tag_cluster_id_' + cluster_id) in groups}}"
+#      with_inventory_hostnames:
+#        - "tag_cluster_id_{{cluster_id}}"
+
+- name: Checking and killing cluster
+  hosts: localhost
+  gather_facts: False
+  tasks:
+    - local_action:
+        module: ec2
+        instance_ids: "[{% for host in groups['tag_cluster_id_' + cluster_id] %}
+                        '{{hostvars[host]['ec2_id']}}'
+                        {{ ',' if not loop.last else '' }}
+                      {% endfor %}]"
+        state: absent
+      when: "{{('tag_cluster_id_' + cluster_id) in groups}}"
+    - debug:
+        msg: "Cluster doesn't exist (no VMs found)!"
+      when: "{{not ('tag_cluster_id_' + cluster_id) in groups}}"
+    - debug:
+        msg:  "You have next set of existing clusters: [{% for group in groups %}{% if 'tag_cluster_id_' in group %}{{ group | regex_replace('tag_cluster_id_', '') }}{% endif %}{% endfor %}]"
+      when: "{{not ('tag_cluster_id_' + cluster_id) in groups}}"

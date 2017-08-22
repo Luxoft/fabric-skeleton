@@ -1,0 +1,3 @@
+gradle.ext.chaincodes_toDeploy  = 'TestChaincode'
+gradle.ext.chaincodes_toUpgrade = 'TestChaincode'
+gradle.ext.fabric_config_path = System.getenv("fabric_config") ?: 'fabric-devnet.yaml'

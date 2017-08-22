@@ -1,0 +1,15 @@
+OrdererOrgs:
+
+  - Name: Orderer
+    Domain: luxoft.com
+    Specs:
+      - Hostname: orderer
+
+PeerOrgs:
+
+  - Name: peer
+    Domain: luxoft.com
+    Template:
+      Count: 2
+    Users:
+      Count: 1

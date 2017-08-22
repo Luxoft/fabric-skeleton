@@ -1,0 +1,9 @@
+# Prometheus + Graphana stack for monitoring
+---
+#- hosts: monitoring[0]
+#  roles:
+#    - prometheus-server-docker
+
+#- hosts: monitoring[0]
+#  roles:
+#    - grafana-server

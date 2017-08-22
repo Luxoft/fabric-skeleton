@@ -1,0 +1,14 @@
+---
+# PROJECT SPECIFIC PART TO RUN TESTS
+
+- name: Calculate nice network_dir path
+  hosts: localhost
+  tasks:
+    - set_fact:
+        actual_network_dir: "{% if network_dir[0] == '/' or network_dir[0] == '~' %}{{network_dir}}{% else %}../{{network_dir}}{% endif %}"
+      when: network_dir is defined
+    - set_fact:
+        actual_network_dir: "../network_dist"
+      when: network_dir is not defined
+
+# place here your stuff

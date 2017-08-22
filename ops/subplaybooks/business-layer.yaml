@@ -1,0 +1,29 @@
+---
+# PROJECT SPECIFIC PART
+
+- name: Calculate nice network_dir path
+  hosts: localhost
+  tasks:
+    - set_fact:
+        actual_network_dir: "{% if network_dir[0] == '/' or network_dir[0] == '~' %}{{network_dir}}{% else %}../{{network_dir}}{% endif %}"
+      when: network_dir is defined
+    - set_fact:
+        actual_network_dir: "../network_dist"
+      when: network_dir is not defined
+
+#################
+# Place here your ansible stuff for business logic
+
+- name: Create fabric.yaml from template
+  hosts: localhost
+  tasks:
+    - template: src=../generator/fabric.yaml.j2 dest=../network_dist/fabric.yaml
+
+- name: Run Fabric configurator
+  hosts: localhost
+  environment:
+    fabric_config: ops/network_dist/fabric.yaml
+  tasks:
+    - shell: gradle networkConfigure
+      args:
+        chdir: ../../

@@ -1,0 +1,67 @@
+if (!JavaVersion.current().java8Compatible) {
+    throw new IllegalStateException("This needs Java 8. You are using ${JavaVersion.current()}.")
+}
+
+group gradle.ext.project_group
+
+apply plugin: 'java'
+apply plugin: 'com.google.protobuf'
+
+sourceCompatibility = 1.8
+
+def protocVersion = gradle.ext.pb_protocVersion
+def protoVersion  = gradle.ext.pb_protoVersion
+def grpcVersion   = gradle.ext.pb_gprcVersion
+
+repositories {
+    mavenCentral()
+}
+
+buildscript {
+    repositories {
+        maven {
+            mavenCentral()
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+    dependencies {
+        classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.0'
+    }
+}
+
+dependencies {
+    compile "io.grpc:grpc-protobuf:${grpcVersion}"
+    compile "com.google.protobuf:protobuf-java:${protoVersion}"
+}
+
+protobuf {
+    protoc  {
+        artifact = "com.google.protobuf:protoc:${protocVersion}"
+        srcDir 'src/main/proto'
+        srcDir '../chaicodes/src/**/*.proto'
+    }
+    plugins {
+        grpc { artifact = "io.grpc:protoc-gen-grpc-java:${grpcVersion}" }
+    }
+    generateProtoTasks {
+        all()*.plugins {
+            grpc {
+                // To generate deprecated interfaces and static bindService method,
+                // turn the enable_deprecated option to true below:
+                option 'enable_deprecated=false'
+            }
+        }
+    }
+}
+
+idea {
+    project {
+        languageLevel = JavaVersion.VERSION_1_8
+    }
+    module {
+        // Not using generatedSourceDirs because of
+        // https://discuss.gradle.org/t/support-for-intellij-2016/15294/8
+        sourceDirs += file("${protobuf.generatedFilesBaseDir}/main/java");
+        sourceDirs += file("${protobuf.generatedFilesBaseDir}/main/grpc");
+    }
+}

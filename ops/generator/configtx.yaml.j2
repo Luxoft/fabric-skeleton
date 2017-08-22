@@ -1,0 +1,91 @@
+Profiles:
+
+    OneOrgOrdererGenesis:
+        Orderer:
+            <<: *OrdererDefaults
+            OrdererType: {% if groups['orderers'] | length == 1 %}solo{% else %}kafka{% endif %}
+
+            Addresses:
+                {% for orderer in groups['orderers'] %}- {{ hostvars[orderer]['inventory_hostname'] }}.luxoft.com:7050
+                {% endfor %}
+
+            Organizations:
+                - *OrdererOrg
+        Application:
+            <<: *ApplicationDefaults
+            Organizations:
+                - *OrdererOrg
+        Consortiums:
+            SampleConsortium:
+                Organizations:
+{% for org_number in range(organisations_count) %}
+                    - *Org{{org_number}}
+{% endfor %}
+
+{% for org_number in range(organisations_count) %}
+    Org{{org_number}}Channel:
+        Consortium: SampleConsortium
+        Application:
+            <<: *ApplicationDefaults
+            Organizations:
+                - *Org{{org_number}}
+
+{% endfor %}
+
+    JointChannel:
+        Consortium: SampleConsortium
+        Application:
+            <<: *ApplicationDefaults
+            Organizations:
+{% for org_number in range(organisations_count) %}
+                - *Org{{org_number}}
+{% endfor %}
+
+Organizations:
+    - &OrdererOrg
+        Name: OrdererOrg
+        ID: OrdererMSP
+        MSPDir: crypto-config/ordererOrganizations/luxoft.com/msp
+        AdminPrincipal: Role.MEMBER
+
+{% for org_number in range(organisations_count) %}
+    - &Org{{org_number}}
+        Name: Org{{org_number}}MSP
+        ID: Org{{org_number}}MSP
+        MSPDir: crypto-config/peerOrganizations/organisation{{org_number}}.luxoft.com/msp
+        AdminPrincipal: Role.MEMBER
+        AnchorPeers:
+            - Host: peer0.organisation{{org_number}}.luxoft.com
+              Port: 7051
+{% endfor %}
+
+Orderer: &OrdererDefaults
+
+    OrdererType: {% if groups['orderers'] | length > 1 %}kafka{% else %}solo{% endif %}
+
+    Addresses:
+        {% for orderer in groups['orderers'] %}- {{ hostvars[orderer]['inventory_hostname'] }}.luxoft.com:7050
+        {% endfor %}
+
+    BatchTimeout: 10ms
+
+    BatchSize:
+        MaxMessageCount: 10
+        AbsoluteMaxBytes: 99 MB
+        PreferredMaxBytes: 512 KB
+
+    Kafka:
+        # Brokers: A list of Kafka brokers to which the orderer connects
+        # NOTE: Use IP:port notation
+        Brokers:
+{% if groups['orderers'] | length == 1 %}
+            - 127.0.0.1:9092
+{% else %}
+            {% for kafka in groups['kafka'] %}- {{ hostvars[kafka]['inventory_hostname'] }}.luxoft.com:9092
+            {% endfor %}
+{% endif %}
+
+    Organizations:
+
+Application: &ApplicationDefaults
+    Organizations:

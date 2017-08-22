@@ -1,0 +1,65 @@
+# When insfrastructure is already up (zookeeper & kafka) use this playbook to start just fabric containers
+---
+- name: Check something
+  hosts: localhost
+  tasks:
+    - debug:
+        msg: "{{ groups }}"
+      with_inventory_hostnames:
+        - "tag_cluster_id_{{cluster_id}}"
+
+- name: Calculate nice network_dir path
+  hosts: localhost
+  tasks:
+    - set_fact:
+        actual_network_dir: "{% if network_dir[0] == '/' or network_dir[0] == '~' %}{{network_dir}}{% else %}../{{network_dir}}{% endif %}"
+      when: network_dir is defined
+    - set_fact:
+        actual_network_dir: "../network_dist"
+      when: network_dir is not defined
+
+- hosts: cas
+  roles:
+    - fabric-ca
+  vars:
+    domain: luxoft.com
+    crypto_config_path: "{{ hostvars['localhost']['actual_network_dir'] }}/crypto-config"
+    channel_artifacts_path: "{{ hostvars['localhost']['actual_network_dir'] }}/channel-artifacts"
+
+- hosts: orderers
+  roles:
+    - fabric-orderer
+  vars:
+    single_orderer: "{{ groups['orderers'] | length == 1 }}"
+    domain: luxoft.com
+    crypto_config_path: "{{ hostvars['localhost']['actual_network_dir'] }}/crypto-config"
+    channel_artifacts_path: "{{ hostvars['localhost']['actual_network_dir'] }}/channel-artifacts"
+    etc_hosts: |
+      {% set res = {} %}
+      {% for kafka_node in groups['kafka'] -%}
+        {% set ignored = res.update({
+          hostvars[kafka_node]['inventory_hostname'] + '.' + domain: hostvars[kafka_node]['ansible_host']
+        }) %}
+      {% endfor %}
+      {{ res }}
+
+- hosts: peers
+  roles:
+    - fabric-peer
+  vars:
+    domain: luxoft.com
+    crypto_config_path: "{{ hostvars['localhost']['actual_network_dir'] }}/crypto-config"
+    channel_artifacts_path: "{{ hostvars['localhost']['actual_network_dir'] }}/channel-artifacts"
+    etc_hosts: |
+      {% set res = {} %}
+      {% for orderer in groups['orderers'] -%}
+        {% set ignored = res.update({
+          hostvars[orderer]['inventory_hostname'] + '.' + domain: hostvars[orderer]['ansible_host']
+        }) %}
+      {% endfor %}
+      {% for peer in groups['peers'] -%}
+        {% set ignored = res.update({
+          'peer' + hostvars[peer]['peer_index'] + '.organisation' + hostvars[peer]['organisation_index'] + '.' + domain: hostvars[peer]['ansible_host']
+        }) %}
+      {% endfor %}
+      {{ res }}

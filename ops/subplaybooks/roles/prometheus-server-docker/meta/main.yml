@@ -1,0 +1,15 @@
+galaxy_info:
+  author: Alexey Doroganov
+  description: Runs prom/prometheus docker container
+  company: Luxoft
+  license: Apache
+  min_ansible_version: 2.1
+  platforms:
+    - name: Ubuntu
+      versions:
+        - all
+  galaxy_tags: []
+dependencies:
+    - src: git+http://luxproject.luxoft.com/stash/scm/blockchain/ansible-playbooks.git
+      varsion: origin/ubuntu-docker-engine
+      name: ubuntu-docker-engine

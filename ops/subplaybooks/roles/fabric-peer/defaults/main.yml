@@ -1,0 +1,12 @@
+---
+node_name: "peer{{peer_index}}.organisation{{organisation_index}}"
+domain: luxoft.com
+image_tag: x86_64-1.0.1
+crypto_config_path: ../../../../network/crypto-config
+channel_artifacts_path: ../../../../network/channel-artifacts
+core_peer_gossip_externalendpoint: "{{node_name}}.{{domain}}"
+core_peer_gossip_bootstrap: ""
+api_port: 7051
+events_port: 7053
+container_state: started
+couchdb_port: 5984

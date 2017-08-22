@@ -1,0 +1,9 @@
+---
+node_name: "{{inventory_hostname}}.organisation{{organisation_index}}"
+domain: luxoft.com
+image_tag: x86_64-1.0.1
+crypto_config_path: ../../../../network/crypto-config
+channel_artifacts_path: ../../../../network/channel-artifacts
+ca_admin_password: adminpw
+api_port: 7054
+container_state: started

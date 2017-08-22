@@ -1,0 +1,89 @@
+---
+- name: pull peer image
+  docker_image:
+    name: "hyperledger/fabric-peer:{{image_tag}}"
+  become: yes
+
+- name: pull ccenv image
+  docker_image:
+    name: "hyperledger/fabric-ccenv:{{image_tag}}"
+  become: yes
+
+- name: copy msp
+  synchronize:
+    src: "{{crypto_config_path}}/peerOrganizations/organisation{{organisation_index}}.{{domain}}/peers/{{node_name}}.{{domain}}/msp"
+    dest: "{{ ansible_env.HOME}}/{{node_name}}"
+
+- name: copy tls
+  synchronize:
+    src: "{{crypto_config_path}}/peerOrganizations/organisation{{organisation_index}}.{{domain}}/peers/{{node_name}}.{{domain}}/tls"
+    dest: "{{ ansible_env.HOME}}/{{node_name}}"
+
+- name: Create a network
+  docker_network:
+    name: "{{node_name}}_net"
+
+#- name: install couchdb
+#  become: yes
+#  docker_container:
+#    name: "{{node_name}}.couchdb"
+#    image: "hyperledger/fabric-couchdb:{{image_tag}}"
+#    state: "{{container_state}}"
+#    restart: yes
+#    recreate: yes
+#    keep_volumes: false
+#    log_driver: 'json-file'
+#    log_options:
+#      max-size: "100m"
+#    networks:
+#      - name: "{{node_name}}_net"
+## Comment/Uncomment the port mapping if you want to hide/expose the CouchDB service,
+## for example map it to utilize Fauxton User Interface in dev environments.
+#    ports:
+#      - "{{couchdb_port}}:5984"
+
+# Debugging etc_hosts
+- debug:
+    var=etc_hosts
+
+- name: start peer
+  become: yes
+  docker_container:
+    name: "{{node_name}}.{{domain}}"
+    keep_volumes: false
+    log_driver: 'json-file'
+    log_options:
+      max-size: "100m"
+    env:
+      CORE_PEER_ID: "{{node_name}}.{{domain}}"
+      CORE_PEER_ADDRESS: "{{node_name}}.{{domain}}:7051"
+      CORE_PEER_GOSSIP_EXTERNALENDPOINT: "{{node_name}}.{{domain}}:7051"
+      CORE_PEER_LOCALMSPID: "Org{{organisation_index}}MSP"
+      CORE_VM_ENDPOINT: unix:///host/var/run/docker.sock
+      CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE: "{{node_name}}_net"
+      CORE_PEER_GOSSIP_BOOTSTRAP: "peer0.organisation{{organisation_index}}.{{domain}}:7051"
+      CORE_LOGGING_LEVEL: DEBUG
+      CORE_PEER_TLS_ENABLED: true
+      CORE_PEER_GOSSIP_USELEADERELECTION: true
+      CORE_PEER_GOSSIP_ORGLEADER: false
+      CORE_PEER_PROFILE_ENABLED: true
+      CORE_PEER_TLS_CERT_FILE: /etc/hyperledger/fabric/tls/server.crt
+      CORE_PEER_TLS_KEY_FILE: /etc/hyperledger/fabric/tls/server.key
+      CORE_PEER_TLS_ROOTCERT_FILE: /etc/hyperledger/fabric/tls/ca.crt
+#      CORE_LEDGER_STATE_STATEDATABASE: CouchDB
+#      CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS: "{{node_name}}.couchdb:5984"
+    etc_hosts: "{{ etc_hosts }}"
+    volumes:
+      - /var/run/:/host/var/run/
+      - "{{ ansible_env.HOME }}/{{node_name}}/msp:/etc/hyperledger/fabric/msp"
+      - "{{ ansible_env.HOME }}/{{node_name}}/tls:/etc/hyperledger/fabric/tls"
+    command: peer node start
+    image: "hyperledger/fabric-peer:{{image_tag}}"
+    state: "{{container_state}}"
+    restart: yes
+    recreate: yes
+    networks:
+      - name: "{{node_name}}_net"
+    ports:
+      - "{{api_port}}:7051"
+      - "{{events_port}}:7053"

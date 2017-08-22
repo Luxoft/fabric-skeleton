@@ -1,0 +1,25 @@
+# basic vars for deployment, taken from config.yaml.source
+---
+region: us-east-1
+instance_type: t2.micro
+ami: ami-f4cc1de2  # Ubuntu 16.04 LTS
+keypair: apitester
+pem_path: /home/arturm/.ssh/apitester.pem
+user_name: ubuntu
+project_name: my_project_dev
+subnet_id: subnet-d841bb85
+
+when_exists: skip_starter # one of [crush, skip_starter, none], to stop whole deployment, skip aws starter or deploy as usual
+
+monitoring_enabled: False # to start blockchain monitoring stack
+elk_enabled: False # to start external logging stack on ELK
+
+# fabric network configs
+orderers_count: 1
+peers_count_per_org: 2  # NOTE: peers_count_per_org for 1 organisation, total peers count is calculated as peers_count*organisations_count
+organisations_count: 1
+zookeeper_count: 3 # 3/5/7 - used when orderers_count > 1
+kafka_count: 4 # > 3 - used when orderers_count > 1
+business_nodes_count: 1
+
+# NOTE: feel free to add your project-specific variables

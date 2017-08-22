@@ -1,0 +1,3 @@
+---
+# defaults file for prometheus-server-docker
+scrape_configs: "{{[{'name': 'prometheus', 'targets':['localhost:9090']}]}} + {{[{'name':'ethereum', 'targets': groups['eth_exporter']|default([])|map('regex_replace', '^(?P<host>.+)$','\\g<host>:9101')|list + groups['eth_exporter']|default([])|map('regex_replace', '^(?P<host>.+)$','\\g<host>:9100')|list }]}}"

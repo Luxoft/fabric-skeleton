@@ -1,0 +1,228 @@
+####
+# AWS oriented cluster starter
+# Checks cluster by id, rises EC2 instances when needed
+####
+---
+- name: Set cluster_exists and check that we can continue
+  hosts: localhost
+  tasks:
+    - set_fact:
+        cluster_exists: "{{ ('tag_cluster_id_' + cluster_id) in groups }}"
+    - set_fact:
+        skip_starter: "{{ cluster_exists and when_exists == 'skip_starter' }}"
+    - fail:
+        msg: "You have an existing cluster, but asked to crush deploy in this case (in config when_exists field).
+         Please make sure you've done with previous cluster!"
+      when: "cluster_exists and when_exists == 'crush'"
+
+- name: Show calculated flags
+  hosts: localhost
+  tasks:
+    - debug:
+        msg: "Cluster exists: {{cluster_exists}}, skip starter: {{skip_starter}}"
+
+- name: Create a new EC2 instances for Hyberledger Fabric Blockchain
+  hosts: localhost
+  gather_facts: False
+  tasks:
+    - name: Create CAs
+      when: "not skip_starter"
+      ec2:
+         key_name: "{{ keypair }}"
+         group: Blockchain-Fabric
+         instance_type: "{{ instance_type}}"
+         image: "{{ ami }}"
+         wait: true
+         region: "{{ region }}"
+         count: 1 # "{{ organisations_count }}"
+         instance_tags:
+            Name: "{{project_name}}_ca_org{{ item }}"
+            cluster_id: "{{cluster_id}}"
+            project_group: cas
+            project: "{{project_name}}"
+            organisation_index: "{{ item }}"
+         vpc_subnet_id: "{{subnet_id}}"
+         assign_public_ip: yes
+      with_items: "{{range(organisations_count)|list}}"
+      register: ec2cas
+#
+    - name: Create orderers
+      when: "not skip_starter"
+      ec2:
+         key_name: "{{ keypair }}"
+         group: Blockchain-Fabric
+         instance_type: "{{ instance_type}}"
+         image: "{{ ami }}"
+         wait: true
+         region: "{{ region }}"
+         count: "{{orderers_count}}"
+         instance_tags:
+            Name: "{{project_name}}_orderer"
+            cluster_id: "{{cluster_id}}"
+            project_group: orderers
+            project: "{{project_name}}"
+         vpc_subnet_id: "{{subnet_id}}"
+         assign_public_ip: yes
+      register: ec2orderers
+#
+    - name: Create peers
+      when: "not skip_starter"
+      ec2:
+         key_name: "{{ keypair }}"
+         group: Blockchain-Fabric
+         instance_type: "{{ instance_type}}"
+         image: "{{ ami }}"
+         wait: true
+         region: "{{ region }}"
+         count: 1
+         instance_tags:
+            Name: "{{project_name}}_peer{{item[1]}}_org{{ item[0] }}"
+            cluster_id: "{{ cluster_id }}"
+            project_group: peers
+            project: "{{project_name}}"
+            peer_index: "{{item[1]}}"
+            organisation_index: "{{ item[0] }}"
+         vpc_subnet_id: "{{subnet_id}}"
+         assign_public_ip: yes
+      with_nested:
+        - "{{ range(organisations_count)|list }}"
+        - "{{ range(peers_count_per_org)|list }}"
+      register: ec2peers
+
+    - name: Create zookeeper nodes
+      when: "orderers_count > 1 and not skip_starter"
+      ec2:
+         key_name: "{{ keypair }}"
+         group: Blockchain-Fabric
+         instance_type: "{{ instance_type}}"
+         image: "{{ ami }}"
+         wait: true
+         region: "{{ region }}"
+         count: "{{ zookeeper_count }}"
+         instance_tags:
+            Name: "{{project_name}}_zoo"
+            cluster_id: "{{ cluster_id }}"
+            project_group: zookeeper
+            project: "{{project_name}}"
+         vpc_subnet_id: "{{subnet_id}}"
+         assign_public_ip: yes
+      register: ec2zookeeper
+#
+    - name: Create kafka nodes
+      when: "orderers_count > 1 and not skip_starter"
+      ec2:
+         key_name: "{{ keypair }}"
+         group: Blockchain-Fabric
+         instance_type: t2.medium # "{{ instance_type}}"
+         image: "{{ ami }}"
+         wait: true
+         region: "{{ region }}"
+         count: "{{ kafka_count }}"
+         instance_tags:
+            Name: "{{project_name}}_kafka"
+            cluster_id: "{{ cluster_id }}"
+            project_group: kafka
+            project: "{{project_name}}"
+         vpc_subnet_id: "{{subnet_id}}"
+         assign_public_ip: yes
+      register: ec2kafka
+#
+    - name: Create monitoring
+      when: "not skip_starter and monitoring_enabled"
+      ec2:
+         key_name: "{{ keypair }}"
+         group: Blockchain-Fabric
+         instance_type: "{{ instance_type}}"
+         image: "{{ ami }}"
+         wait: true
+         region: "{{ region }}"
+         count: 1
+         instance_tags:
+            Name: "{{project_name}}_monitoring"
+            cluster_id: "{{ cluster_id }}"
+            project_group: monitoring
+            project: "{{project_name}}"
+         vpc_subnet_id: "{{subnet_id}}"
+         assign_public_ip: yes
+      register: ec2monitoring
+#
+    - name: Create elk
+      when: "not skip_starter and elk_enabled"
+      ec2:
+         key_name: "{{ keypair }}"
+         group: Blockchain-Fabric
+         instance_type: "{{ instance_type}}"
+         image: "{{ ami }}"
+         wait: true
+         region: "{{ region }}"
+         count: 1
+         instance_tags:
+            Name: "{{project_name}}_elk"
+            cluster_id: "{{ cluster_id }}"
+            project_group: elk
+            project: "{{project_name}}"
+         vpc_subnet_id: "{{subnet_id}}"
+         assign_public_ip: yes
+      register: ec2elk
+
+    - name: Create business nodes vms
+      ec2:
+         key_name: "{{ keypair }}"
+         group: Blockchain-Fabric
+         instance_type: "{{ instance_type}}"
+         image: "{{ ami }}"
+         wait: true
+         region: "{{ region }}"
+         count: "{{business_nodes_count}}"
+         instance_tags:
+            Name: "{{project_name}}_business_node"
+            cluster_id: "{{ cluster_id }}"
+            project_group: business_nodes
+            project: "{{project_name}}"
+         vpc_subnet_id: "{{subnet_id}}"
+         assign_public_ip: yes
+      register: ec2businessnodes
+#
+    - name: Wait for SSH to come up
+      when: "not skip_starter"
+      wait_for:
+        host: "{{ item.public_ip }}"
+        port: 22
+        delay: 15
+        timeout: 100
+        state: started
+      with_items: "{{ ec2peers['results']|map(attribute='instances')|list + ec2cas['results']|map(attribute='instances')|list + ec2orderers.instances + ec2businessnodes.instances}}"
+
+    - name: Wait for SSH to come up multiorderers case
+      when: "not skip_starter and orderers_count > 1"
+      wait_for:
+        host: "{{ item.public_ip }}"
+        port: 22
+        delay: 15
+        timeout: 100
+        state: started
+      with_items: "{{ ec2kafka.instances + ec2zookeeper.instances }}"
+
+#
+- name: Refresh inventory to have the actual one (before install basic stuff)
+  hosts: localhost
+  tasks:
+    - meta: refresh_inventory
+#
+- name: Install basic requirements (python, docker)
+  hosts: all:!localhost
+  gather_facts: False
+  tasks:
+    - name: check docker-engine installed
+      command: dpkg-query -l docker-engine
+      register: deb_check
+      ignore_errors: True
+    - name: Set requirements_installed flag True if docker-engine package installed
+      set_fact: requirements_installed=True
+      when: ('msg' in deb_check and deb_check.msg.find('FAILURE') == -1) or ('stdout' in deb_check and deb_check.stdout.find('no packages found') == -1)
+    - include_role:
+        name: ubuntu-ansible-req
+      when: not requirements_installed
+    - include_role:
+        name: ubuntu-docker-engine
+      when: not requirements_installed

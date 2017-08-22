@@ -1,0 +1,92 @@
+#
+# Copyright Luxoft. All Rights Reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+admins:
+    - org1.luxoft.com:
+        name: admin
+        cert: network/crypto-config/peerOrganizations/luxoft.com/users/Admin@luxoft.com/msp/admincerts/Admin@luxoft.com-cert.pem
+        privateKey: network/crypto-config/peerOrganizations/luxoft.com/users/Admin@luxoft.com/msp/keystore/d66bb66681f6390a3c94e3689f8aa97b2408425b9a0ed65a516913c919686162_sk
+        mspID: Org1MSP
+
+eventhubs:
+    - peer0.luxoft.com:
+        url: grpcs://peer0.luxoft.com:7053
+        pemFile: network/crypto-config/peerOrganizations/luxoft.com/peers/peer0.luxoft.com/tls/ca.crt
+        properties:
+            sslProvider: openSSL
+            negotiationType: TLS
+            hostnameOverride: peer0.luxoft.com
+    - peer1.luxoft.com:
+        url: grpcs://peer1.luxoft.com:7053
+        pemFile: network/crypto-config/peerOrganizations/luxoft.com/peers/peer1.luxoft.com/tls/ca.crt
+        properties:
+            sslProvider: openSSL
+            negotiationType: TLS
+            hostnameOverride: peer1.luxoft.com
+
+peers:
+    - peer0.luxoft.com:
+        url: grpcs://peer0.luxoft.com:7051
+        pemFile: network/crypto-config/peerOrganizations/luxoft.com/peers/peer0.luxoft.com/tls/ca.crt
+        properties:
+            sslProvider: openSSL
+            negotiationType: TLS
+            hostnameOverride: peer0.luxoft.com
+    - peer1.luxoft.com:
+        url: grpcs://peer1.luxoft.com:7051
+        pemFile: network/crypto-config/peerOrganizations/luxoft.com/peers/peer1.luxoft.com/tls/ca.crt
+        properties:
+            sslProvider: openSSL
+            negotiationType: TLS
+            hostnameOverride: peer1.luxoft.com
+
+orderers:
+    - orderer.luxoft.com:
+        url: grpcs://orderer.luxoft.com:7050
+        pemFile: network/crypto-config/ordererOrganizations/luxoft.com/orderers/orderer.luxoft.com/tls/ca.crt
+        properties:
+            sslProvider: openSSL
+            negotiationType: TLS
+            hostnameOverride: orderer.luxoft.com
+            waitTime: 10000
+
+cas:
+    - ca.luxoft.com:
+        url: https://ca.luxoft.com:7054
+        pemFile: network/crypto-config/peerOrganizations/luxoft.com/ca/ca.luxoft.com-cert.pem
+        sslProvider: openSSL
+        negotiationType: TLS
+        hostnameOverride: ca.luxoft.com
+        waitTime: 10000
+        allowAllHostNames: true
+        adminLogin: admin
+        adminSecret: adminpw
+        mspID: Org1MSP
+
+chaincodes:
+    - filestorage:
+        id: filestorage
+        sourceLocation: TestChaincode
+        sourceLocationPrefix: chaincodes
+        version: v01
+        type: GO_LANG
+
+channels:
+    - testchannel:
+        admin: org1.luxoft.com
+        orderers:
+            - orderer.luxoft.com
+        peers:
+            - peer0.luxoft.com
+            - peer1.luxoft.com
+        eventhubs:
+            - peer0.luxoft.com
+            - peer1.luxoft.com
+        txFile: network/channel-artifacts/channel.tx
+        chaincodes:
+            - filestorage
+            - authservice
+            - iotregistry
+            - userregistry

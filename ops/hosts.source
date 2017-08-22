@@ -1,0 +1,41 @@
+[all:vars]
+ansible_connection=ssh
+ansible_ssh_private_key_file=/home/arturm/.ssh/apitester.pem
+# place for different global vars
+
+[local]
+localhost ansible_connection=local
+
+[cas]
+ca0 ansible_host=<ip_address_for_ssh_access> organisation_index=0
+# place for additional cas machines, use ca[number] notation
+
+[orderers]
+orderer0 ansible_host=<ip_address_for_ssh_access>
+
+[peers]
+peer0 ansible_host=<ip_address_for_ssh_access> peer_index=0 organisation_index=0
+peer1 ansible_host=<ip_address_for_ssh_access> peer_index=1 organisation_index=0
+# when you're customizing this part, make sure you're not skipping indexes
+
+#[zookeeper]
+#zoo0 ansible_host=<ip_address_for_ssh_access> zookeeper_numeric_id=0
+#zoo1 ansible_host=<ip_address_for_ssh_access> zookeeper_numeric_id=1
+#zoo2 ansible_host=<ip_address_for_ssh_access> zookeeper_numeric_id=2
+# when you're customizing this part, make sure you're not skipping zookeeper_numeric_id
+
+#[kafka]
+#kafka0 ansible_host=<ip_address_for_ssh_access> kafka_numeric_id=0
+#kafka1 ansible_host=<ip_address_for_ssh_access> kafka_numeric_id=1
+#kafka2 ansible_host=<ip_address_for_ssh_access> kafka_numeric_id=2
+#kafka3 ansible_host=<ip_address_for_ssh_access> kafka_numeric_id=3
+# when you're customizing this part, make sure you're not skipping kafka_numeric_id
+
+#[monitoring]
+#monitoring0 ansible_host=<ip_address_for_ssh_access>
+
+#[elk]
+#elk0 ansible_host=<ip_address_for_ssh_access>
+
+[business_nodes]
+business_node ansible_host=127.0.0.1

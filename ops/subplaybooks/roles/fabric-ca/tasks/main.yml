@@ -1,0 +1,32 @@
+---
+- name: pull ca image
+  docker_image:
+    name: "hyperledger/fabric-ca:{{image_tag}}"
+  become: yes
+
+- name: copy ca
+  synchronize:
+    src: "{{crypto_config_path}}/peerOrganizations/organisation{{organisation_index}}.{{domain}}/ca"
+    dest: "{{ ansible_env.HOME}}"
+
+- name: start ca
+  become: yes
+  docker_container:
+    name: "{{node_name}}.{{domain}}"
+    keep_volumes: false
+    env:
+      FABRIC_CA_HOME: /etc/hyperledger/fabric-ca-server
+      FABRIC_CA_SERVER_CA_CERTFILE: "/etc/hyperledger/fabric-ca-server-config/ca.organisation{{organisation_index}}.{{domain}}-cert.pem"
+      FABRIC_CA_SERVER_CA_KEYFILE: /etc/hyperledger/fabric-ca-server-config/*_sk
+      FABRIC_CA_SERVER_TLS_ENABLED: true
+      FABRIC_CA_SERVER_TLS_CERTFILE: "/etc/hyperledger/fabric-ca-server-config/ca.organisation{{organisation_index}}.{{domain}}-cert.pem"
+      FABRIC_CA_SERVER_TLS_KEYFILE: /etc/hyperledger/fabric-ca-server-config/*_sk
+    command: "sh -c 'fabric-ca-server start -b admin:{{ca_admin_password}} -d'"
+    volumes:
+      - "{{ansible_env.HOME}}/ca/:/etc/hyperledger/fabric-ca-server-config"
+    image: "hyperledger/fabric-ca:{{image_tag}}"
+    state: "{{container_state}}"
+    restart: yes
+    recreate: yes
+    ports:
+      - "{{api_port}}:7054"

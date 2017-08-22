@@ -1,0 +1,15 @@
+---
+# reinstalls cluster on aws with whole project
+# for project-specific part of deployment you should fill "business" playbooks
+# NOTE: leaves cluster working! Use test playbooks to make run-test-kill (to save money)
+
+- import_playbook: subplaybooks/aws-fabric-hosts-loader.yaml
+- import_playbook: subplaybooks/fabric-network-cleanup.yaml
+- import_playbook: subplaybooks/fabric-network-restart.yaml
+
+#####################
+# business block - project specific layer
+#####################
+
+# place here restarters of business nodes
+- import_playbook: subplaybooks/business-layer-restarter.yaml

@@ -1,0 +1,99 @@
+---
+- name: pull orderer image
+  docker_image:
+    name: "hyperledger/fabric-orderer:{{image_tag}}"
+  become: yes
+
+- name: copy channels-artifacts
+  synchronize:
+    src: "{{channel_artifacts_path}}"
+    dest: "{{ ansible_env.HOME}}/{{node_name}}"
+
+- name: copy msp
+  synchronize:
+    src: "{{crypto_config_path}}/ordererOrganizations/{{domain}}/orderers/{{node_name}}.{{domain}}/msp"
+    dest: "{{ ansible_env.HOME}}/{{node_name}}"
+
+- name: copy tls
+  synchronize:
+    src: "{{crypto_config_path}}/ordererOrganizations/{{domain}}/orderers/{{node_name}}.{{domain}}/tls"
+    dest: "{{ ansible_env.HOME}}/{{node_name}}"
+
+- debug: var=etc_hosts
+
+- name: start single orderer
+  when: single_orderer
+  become: yes
+  docker_container:
+    name: "{{node_name}}.{{domain}}"
+    image: "hyperledger/fabric-orderer:{{image_tag}}"
+    state: started
+    restart: yes
+    keep_volumes: false
+    log_driver: 'json-file'
+    log_options:
+      max-size: "100m"
+    ports:
+      - "{{api_port}}:7050"
+    env:
+      ORDERER_GENERAL_LOGLEVEL: debug
+      ORDERER_GENERAL_LISTENADDRESS: 0.0.0.0
+      ORDERER_GENERAL_GENESISMETHOD: file
+      ORDERER_GENERAL_GENESISFILE: /var/hyperledger/orderer/orderer.genesis.block
+      ORDERER_GENERAL_LOCALMSPID: OrdererMSP
+      ORDERER_GENERAL_LOCALMSPDIR: /var/hyperledger/orderer/msp
+      ORDERER_GENERAL_TLS_ENABLED: true
+      ORDERER_GENERAL_TLS_PRIVATEKEY: /var/hyperledger/orderer/tls/server.key
+      ORDERER_GENERAL_TLS_CERTIFICATE: /var/hyperledger/orderer/tls/server.crt
+      ORDERER_GENERAL_TLS_ROOTCAS: "[/var/hyperledger/orderer/tls/ca.crt]"
+    command: orderer
+    recreate: yes
+    volumes:
+      - "{{ ansible_env.HOME }}/{{node_name}}/channel-artifacts/genesis.block:/var/hyperledger/orderer/orderer.genesis.block"
+      - "{{ ansible_env.HOME }}/{{node_name}}/msp:/var/hyperledger/orderer/msp"
+      - "{{ ansible_env.HOME }}/{{node_name}}/tls:/var/hyperledger/orderer/tls"
+
+- name: start orderer
+  when: not single_orderer
+  become: yes
+  docker_container:
+    name: "{{node_name}}.{{domain}}"
+    image: "hyperledger/fabric-orderer:{{image_tag}}"
+    state: "{{container_state}}"
+    restart: yes
+    keep_volumes: false
+    log_driver: 'json-file'
+    log_options:
+      max-size: "100m"
+    ports:
+      - "{{api_port}}:7050"
+    etc_hosts: "{{ etc_hosts }}"
+    env:
+      ORDERER_GENERAL_LISTENPORT: "{{api_port}}"
+      CONFIGTX_ORDERER_ORDERERTYPE: kafka
+      CONFIGTX_ORDERER_KAFKA_BROKERS: "[{% for kafka_node in groups['kafka'] %}{{ hostvars[kafka_node]['ansible_host'] }}:{{kafka_port}}{{ ',' if not loop.last else '' }}{% endfor %}]"
+      ORDERER_KAFKA_RETRY_SHORTINTERVAL: 5s
+      ORDERER_KAFKA_RETRY_SHORTTOTAL: 120s
+      ORDERER_KAFKA_VERBOSE: true
+      CONFIGTX_ORDERER_ADDRESSES: "[127.0.0.1:7050]"
+      ORDERER_GENERAL_LEDGERTYPE: json
+      ORDERER_GENERAL_GENESISPROFILE: SampleInsecureKafka
+      ORDERER_GENERAL_LOGLEVEL: debug
+      ORDERER_GENERAL_LISTENADDRESS: 0.0.0.0
+      ORDERER_GENERAL_GENESISMETHOD: file
+      ORDERER_GENERAL_GENESISFILE: /var/hyperledger/orderer/orderer.genesis.block
+      ORDERER_GENERAL_LOCALMSPID: OrdererMSP
+      ORDERER_GENERAL_LOCALMSPDIR: /var/hyperledger/orderer/msp
+      ORDERER_GENERAL_TLS_ENABLED: true
+      ORDERER_GENERAL_TLS_PRIVATEKEY: /var/hyperledger/orderer/tls/server.key
+      ORDERER_GENERAL_TLS_CERTIFICATE: /var/hyperledger/orderer/tls/server.crt
+      ORDERER_GENERAL_TLS_ROOTCAS: "[/var/hyperledger/orderer/tls/ca.crt]"
+    command: orderer
+    recreate: yes
+    volumes:
+      - "{{ ansible_env.HOME }}/{{node_name}}/channel-artifacts/genesis.block:/var/hyperledger/orderer/orderer.genesis.block"
+      - "{{ ansible_env.HOME }}/{{node_name}}/msp:/var/hyperledger/orderer/msp"
+      - "{{ ansible_env.HOME }}/{{node_name}}/tls:/var/hyperledger/orderer/tls"
+#    log_driver: gelf
+#    log_options:
+#      gelf-address: udp://{{ hostvars[groups['elk'][0]]['ansible_host'] }}:12201

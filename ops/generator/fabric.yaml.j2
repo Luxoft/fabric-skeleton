@@ -1,0 +1,76 @@
+#
+# Copyright Luxoft. All Rights Reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+admins:
+    - org1.luxoft.com:
+        name: admin
+        cert: crypto-config/peerOrganizations/organisation0.luxoft.com/users/Admin@organisation0.luxoft.com/msp/admincerts/Admin@organisation0.luxoft.com-cert.pem
+        privateKey: crypto-config/peerOrganizations/organisation0.luxoft.com/users/Admin@organisation0.luxoft.com/msp/keystore/*_sk
+        mspID: Org0MSP
+
+eventhubs:
+    - peer0.organisation0.luxoft.com:
+        url: grpcs://{{ hostvars['peer0']['ansible_host'] }}:7053
+        pemFile: crypto-config/peerOrganizations/organisation0.luxoft.com/peers/peer0.organisation0.luxoft.com/tls/ca.crt
+        properties:
+            sslProvider: openSSL
+            negotiationType: TLS
+            hostnameOverride: peer0.organisation0.luxoft.com
+    - peer1.organisation0.luxoft.com:
+        url: grpcs://{{ hostvars['peer1']['ansible_host'] }}:7053
+        pemFile: crypto-config/peerOrganizations/organisation0.luxoft.com/peers/peer1.organisation0.luxoft.com/tls/ca.crt
+        properties:
+            sslProvider: openSSL
+            negotiationType: TLS
+            hostnameOverride: peer1.organisation0.luxoft.com
+
+peers:
+    - peer0.organisation0.luxoft.com:
+        url: grpcs://{{ hostvars['peer0']['ansible_host'] }}:7051
+        pemFile: crypto-config/peerOrganizations/organisation0.luxoft.com/peers/peer0.organisation0.luxoft.com/tls/ca.crt
+        properties:
+            sslProvider: openSSL
+            negotiationType: TLS
+            hostnameOverride: peer0.organisation0.luxoft.com
+    - peer1.organisation0.luxoft.com:
+        url: grpcs://{{ hostvars['peer1']['ansible_host'] }}:7051
+        pemFile: crypto-config/peerOrganizations/organisation0.luxoft.com/peers/peer1.organisation0.luxoft.com/tls/ca.crt
+        properties:
+            sslProvider: openSSL
+            negotiationType: TLS
+            hostnameOverride: peer1.organisation0.luxoft.com
+
+orderers:
+    - orderer0.luxoft.com:
+        url: grpcs://{{ hostvars['orderer0']['ansible_host'] }}:7050
+        pemFile: crypto-config/ordererOrganizations/luxoft.com/orderers/orderer0.luxoft.com/tls/ca.crt
+        properties:
+            sslProvider: openSSL
+            negotiationType: TLS
+            hostnameOverride: orderer0.luxoft.com
+            ordererWaitTimeMilliSecs: 10000
+
+chaincodes:
+    - testchaincode:
+        id: testchaincode
+        sourceLocation: chaincode
+        sourceLocationPrefix: ../../chaincodes/TestChaincode
+        version: v01
+        type: GO_LANG
+
+channels:
+    - org0channel:
+        admin: org1.luxoft.com
+        orderers:
+            - orderer0.luxoft.com
+        peers:
+            - peer0.organisation0.luxoft.com
+            - peer1.organisation0.luxoft.com
+        eventhubs:
+            - peer0.organisation0.luxoft.com
+            - peer1.organisation0.luxoft.com
+        txFile: channel-artifacts/org0channel.tx
+        chaincodes:
+            - testchaincode

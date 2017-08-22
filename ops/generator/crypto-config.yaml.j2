@@ -1,0 +1,19 @@
+OrdererOrgs:
+
+  - Name: Orderer
+    Domain: luxoft.com
+    Specs:
+      {% for orderer in groups['orderers'] %}- Hostname: {{ hostvars[orderer]['inventory_hostname'] }}
+      {% endfor %}
+
+PeerOrgs:
+    {% for org_number in range(organisations_count) %}
+
+  - Name: organisation{{org_number}}
+    Domain: organisation{{org_number}}.luxoft.com
+    Template:
+      Count: {{ peers_count_per_org }}
+    Users:
+      Count: 1
+
+    {% endfor %}

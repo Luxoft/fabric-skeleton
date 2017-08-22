@@ -1,0 +1,11 @@
+---
+# installs test cluster on aws with whole project, tests it, kills it
+
+# read aws-project-starter.yaml
+- import_playbook: aws-project-starter.yaml
+
+# fill perf-test playbook to implement project-specific logic of testing
+- import_playbook: subplaybooks/business-tester.yaml
+
+# kills all AWS machines of cluster using cluster_id variable
+- import_playbook: subplaybooks/aws-cluster-killer.yaml

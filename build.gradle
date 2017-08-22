@@ -1,0 +1,143 @@
+if (!JavaVersion.current().java8Compatible) {
+    throw new IllegalStateException("This needs Java 8. You are using ${JavaVersion.current()}.")
+}
+
+apply plugin: 'java'
+apply plugin: 'idea'
+apply plugin: 'application'
+apply plugin: 'com.google.protobuf'
+apply plugin: 'com.github.johnrengelman.shadow'
+apply plugin: 'docker-compose'
+
+sourceCompatibility = 1.8
+
+group   gradle.ext.project_group
+version gradle.ext.project_version
+
+mainClassName = gradle.ext.project_launcher
+
+
+def protocVersion = gradle.ext.pb_protocVersion
+def protoVersion  = gradle.ext.pb_protoVersion
+def grpcVersion   = gradle.ext.pb_gprcVersion
+
+buildscript {
+    repositories {
+        maven {
+            mavenCentral()
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+    dependencies {
+        classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.0'
+        classpath 'com.google.gradle:osdetector-gradle-plugin:1.4.0'
+        classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.4'
+        classpath "com.avast.gradle:gradle-docker-compose-plugin:0.6.12"
+    }
+}
+
+allprojects {
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        maven { url 'https://jitpack.io' }
+    }
+}
+
+dependencies {
+    compile 'com.github.Luxoft:fabric-utils:1.2.16'
+
+    compile "io.grpc:grpc-protobuf:${grpcVersion}"
+    compile "com.google.protobuf:protobuf-java:${protoVersion}"
+
+    compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.21'
+    compile group: 'ch.qos.logback', name: 'logback-core', version: '1.2.3'
+    compile group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
+
+    testCompile group: 'org.mockito', name: 'mockito-all', version: '1.10.19'
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+}
+
+protobuf {
+    protoc  {
+        artifact = "com.google.protobuf:protoc:${protocVersion}"
+    }
+
+    generateProtoTasks {
+        all().each { task ->
+            task.builtins {
+                // Go chaincode to generate
+                go {
+                    outputSubDir = '../../../../../chaincodes/TestChaincode/src/chaincode/'
+                }
+            }
+        }
+    }
+}
+
+idea {
+    project { languageLevel = JavaVersion.VERSION_1_8 }
+    module {
+        // Not using generatedSourceDirs because of
+        // https://discuss.gradle.org/t/support-for-intellij-2016/15294/8
+        sourceDirs += file("${protobuf.generatedFilesBaseDir}/main/java")
+        sourceDirs += file("${protobuf.generatedFilesBaseDir}/main/grpc")
+    }
+}
+
+sourceSets {
+    main {
+        proto {
+            srcDirs 'src/main/proto'
+            srcDirs 'chaincodes/TestChaincode/src/chaincode/proto'
+        }
+        java {
+            srcDir "src/java"
+        }
+    }
+    test {
+        java {
+            srcDir "src/test"
+        }
+    }
+}
+
+shadowJar {
+    classifier = 'fat'
+    manifest {
+        attributes 'Main-Class': mainClassName
+    }
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '3.3'
+}
+
+// TODO Task fails in IntelliJ Idea but works as 'gradle generateGoProto' from command line
+task generateGoProto {
+    doLast {
+        exec {
+            def srcDir = new File(projectDir, "src/main/proto/")
+            workingDir srcDir
+            println(srcDir)
+
+            commandLine 'sh', '-c', "protoc --go_out=plugins=grpc:. *.proto"
+        }
+    }
+}
+
+apply from: 'fabric-devnet.gradle'
+
+// Docker compose plugin
+dockerCompose.isRequiredBy(test)
+
+dockerCompose {
+     useComposeFiles = ['network/local/docker-compose.yaml'] // like 'docker-compose -f <file>'; default is empty
+    // All params here: https://github.com/jeremiah/spdxl
+}
+test.doFirst {
+    // exposes "${serviceName}_HOST" and "${serviceName}_TCP_${exposedPort}" environment variables
+    // for example exposes "WEB_HOST" and "WEB_TCP_80" environment variables for service named `web` with exposed port `80`
+    // if service is scaled using scale option, environment variables will be exposed for each service instance like "WEB_1_HOST", "WEB_1_TCP_80", "WEB_2_HOST", "WEB_2_TCP_80" and so on
+    dockerCompose.exposeAsEnvironment(test)
+}

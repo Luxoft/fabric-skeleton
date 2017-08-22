@@ -1,0 +1,23 @@
+---
+- file:
+    path: ~/prometheus/
+    state: directory
+    
+- name: Generate config file
+  template:
+    src: "{{ role_path }}/templates/prometheus.yml.j2"
+    dest: ~/prometheus/prometheus.yml
+  
+- name: Create prometheus container
+  docker_container:
+    name: prometheus
+    image: prom/prometheus
+    published_ports:
+      - 9090:9090/tcp
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    timeout: 360
+    restart_policy: always
+    restart: yes
+    ports:
+      - 9090:9090
