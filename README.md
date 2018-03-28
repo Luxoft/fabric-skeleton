@@ -1,8 +1,8 @@
-####Fabric Skeleton
+# Fabric Skeleton
 
-Basic stuff to bootstrap your's Hyperledger Fabric project.
+Basic stuff to bootstrap your Hyperledger Fabric project.
 
-#####Project structure:
+# Project structure:
 
 - */src* - Basic Java project stub and Fabric integration tests
 - */ops* - boilerplate of devops
@@ -10,21 +10,22 @@ Basic stuff to bootstrap your's Hyperledger Fabric project.
 - */chaincodes* - Hyperledger Fabric chaincodes
 - *fabric-devnet.gradle* - list of gradle tasks to run and deploy Fabric
 
-#####Dependencies:
+# Dependencies:
 * Gradle 3.5+
 * protoc-gen-go - for building chaincode go protobuf files (Ubuntu package: _golang-goprotobuf-dev_)
-#####Build:
+
+# Build:
 ```
 gradle clean build
 ```
-#####How to run:
+# How to run:
 ```
 gradle networkUp            // Run Hyperledger Fabric
 gradle networkConfigure     // Configure Fabric using yaml descriptor (default: network/fabric-devnet.yaml)
 gradle runShadow            // Run application jar
 ```
 
-#####Shutdown:
+# Shutdown:
 ```
 gradle networkDown
 ```
