@@ -160,7 +160,7 @@ echo "${bold}AWS REGION: ${normal} ${AWS_DEFAULT_REGION}"
 echo -n "${bold}Network Configuration Folder (FABRIC_CFG_PATH ): ${normal}"
 echo "${FABRIC_CFG_PATH}"
 if [ "$AWS_ENABLED" ];then
-	echo "${bold}AWS mode configuration mode: ${normal}$AWS_ENABLED"
+	echo "${bold}AWS configuration mode: ${normal}$AWS_ENABLED"
 fi
 	
 if [ ! -d group_vars/all/ ];then
@@ -177,8 +177,10 @@ if [ "$TEST_FLAG" = true ]
 then
 	echo "${bold}Running Test mode${normal} for $CLUSTER_ID"
 	if [ ! -z "${DRY_RUN}" ];then exit;fi
-	
-    ansible-playbook ${ANSIBLE_VERBOSE} aws-project-tester.yaml -i "${INVENTORY_FILE}" -u "${REMOTE_USER}" --private-key "${KEY_FILE}" --extra-vars "cluster_id=${CLUSTER_ID} aws_enabled=${AWS_ENABLED}"
+
+    ansible-playbook aws-project-tester.yaml -i "${INVENTORY_FILE}"\
+					 -u "${REMOTE_USER}" --private-key "${KEY_FILE}" \
+					 --extra-vars "cluster_id=${CLUSTER_ID} aws_enabled=${AWS_ENABLED}"
     exit
 fi
 
@@ -187,7 +189,9 @@ then
 	echo "${bold}Running Restart mode${normal} for $CLUSTER_ID"
 	if [ ! -z "${DRY_RUN}" ];then exit;fi
 	
-    ansible-playbook ${ANSIBLE_VERBOSE} aws-project-restarter.led=${AWS_ENABLED}"
+    ansible-playbook ${ANSIBLE_VERBOSE} aws-project-restarter.yaml -i ${INVENTORY_FILE} \
+					 -u ${REMOTE_USER} --private-key ${KEY_FILE} \
+					 --extra-vars "cluster_id=${CLUSTER_ID} aws_enabled=${AWS_ENABLED}"
     exit
 fi
 
@@ -195,8 +199,9 @@ if [ "$KILL_FLAG" = true ]
 then
 	echo "${bold}Stop mode${normal} for $CLUSTER_ID"
 	if [ ! -z "${DRY_RUN}" ];then exit;fi
-	
-    ansible-playbook ${ANSIBLE_VERBOSE} subplaybooks/aws-cluster-killer.yaml -i "${INVENTORY_FILE}" --extra-vars "cluster_id=${CLUSTER_ID} aws_enabled=${AWS_ENABLED}"
+    ansible-playbook ${ANSIBLE_VERBOSE} subplaybooks/aws-cluster-killer.yaml \
+					 -i "${INVENTORY_FILE}" \
+					 --extra-vars "cluster_id=${CLUSTER_ID} aws_enabled=${AWS_ENABLED}"
 	exit
 fi
 
@@ -205,13 +210,18 @@ if [ -z "$NETWORK_DIR_PATH" ];then
 	NETWORK_DIR_PATH="${NETWORK_DIR_PATH_DEF}"
     echo "${bold}Using/creating default network config path:${normal} $NETWORK_DIR_PATH"
 	if [ ! -z "${DRY_RUN}" ];then exit;fi
-	
-    ansible-playbook ${ANSIBLE_VERBOSE} aws-project-starter.yaml -i "${INVENTORY_FILE}" -u "${REMOTE_USER}" --private-key "${KEY_FILE}" --extra-vars "cluster_id=${CLUSTER_ID} aws_enabled=${AWS_ENABLED}"
+    ansible-playbook ${ANSIBLE_VERBOSE} aws-project-starter.yaml \
+					 -i "${INVENTORY_FILE}" -u "${REMOTE_USER}"\
+					 --private-key "${KEY_FILE}" \
+					 --extra-vars "cluster_id=${CLUSTER_ID} aws_enabled=${AWS_ENABLED}"
 elif [ -e "${NETWORK_DIR_PATH}" ];then
     echo "${bold}Using network configuration path:${normal} $NETWORK_DIR_PATH "
 	if [ ! -z "${DRY_RUN}" ];then exit;fi
 
-	ansible-playbook ${ANSIBLE_VERBOSE} aws-project-starter.yaml -i "${INVENTORY_FILE}" -u "${REMOTE_USER}" --private-key "${KEY_FILE}" --extra-vars "cluster_id=${CLUSTER_ID} network_dir=${NETWORK_DIR_PATH} aws_enabled=${AWS_ENABLED}"
+	ansible-playbook ${ANSIBLE_VERBOSE} aws-project-starter.yaml \
+					 -i "${INVENTORY_FILE}" -u "${REMOTE_USER}" \
+					 --private-key "${KEY_FILE}" \
+					 --extra-vars "cluster_id=${CLUSTER_ID} network_dir=${NETWORK_DIR_PATH} aws_enabled=${AWS_ENABLED}"
 else
     printf "${RED}Aborting: Network config folder not found: ${NETWORK_DIR_PATH}${NC}\n"
     exit

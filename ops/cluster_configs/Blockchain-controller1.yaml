@@ -3,8 +3,8 @@
 region: us-west-1
 instance_type: t2.micro
 ami: ami-77050a17
-pem_path: /home/ubuntu/.ssh/AWS/AnsibleHostWest1.pem
-keypair: AnsibleHostKeyPair
+pem_path: /home/ubuntu/.ssh/Blockchain-controller.pem
+keypair: Blockchain-controller
 user_name: ubuntu
 project_name: Cluster1
 subnet_id: subnet-4b81f92c
