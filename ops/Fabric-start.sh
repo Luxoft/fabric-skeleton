@@ -1,0 +1,218 @@
+#!/bin/bash
+
+RED='\033[0;31m'
+NC='\033[0m'
+bold=$(tput bold)
+normal=$(tput sgr0)
+
+KILL_FLAG=false
+RESTART_FLAG=false
+TEST_FLAG=false
+REMOTE_USER=ubuntu
+INVENTORY_FILE="hosts"
+ANSIBLE_VERBOSE=""
+DRY_RUN=""
+NETWORK_DIR_PATH_DEF=$PWD/network_dist
+export FABRIC_CFG_PATH=$NETWORK_DIR_PATH_DEF
+
+
+POSITIONAL=()
+while [[ $# -gt 0 ]]
+do
+key="$1"
+case $key in
+
+	-v|--verbose|--debug)
+		ANSIBLE_VERBOSE="-vvv"
+		shift #past option flag
+		export ANSIBLE_KEEP_REMOTE_FILES=1  #for debugging
+		;;
+    -c|--cluster_id)
+		shift #past option flag
+		CLUSTER_ID="$1"
+		shift 
+    ;;
+    -n|--network)
+		shift #past option flag
+		NETWORK_DIR_PATH="$1"
+		export FABRIC_CFG_PATH="$NETWORK_DIR_PATH"
+		shift # past argument
+    ;;
+    -k|--kill|--stop)
+		KILL_FLAG=true
+		shift #past option flag
+		;;
+    -r|--restart)
+		RESTART_FLAG=true
+		shift #past option flag
+		;;
+    -t|--test)
+		TEST_FLAG=true
+		shift #past option flag
+    ;;
+    -h|--hosts)
+		#check path
+		shift #past option flag
+		HOSTS_PATH="$1"
+		shift # past argument
+    ;;
+    -u|--user)
+		shift #past option flag
+		REMOTE_USER="$1"
+		shift # past argument
+    ;;
+    -i|--private_key)
+		shift #past option flag
+		KEY_FILE="$1"
+		shift 
+		;;
+	--region)
+		shift
+		export AWS_DEFAULT_REGION=$1
+		shift
+		;;
+	-s|--subnet)
+		shift
+		export AWS_SUBNET=$1
+		shift
+		;;
+	-a|-ami)
+		shift
+		export AWS_AMI_ID=$1
+		shift
+		;;
+	-g|--group|--security-gerou)
+		shift
+		export AWS_SECURITY_GROUP=$1
+		shift
+		;;
+	--dry-run|--dry_run)
+		shift
+		DRY_RUN=1
+		;;
+	
+    --default)
+		DEFAULT=YES
+		shift #past option flag
+    ;;
+    *)    # unknown option
+		POSITIONAL+=("$1") # save it in an array for later
+		shift # past argument
+    ;;
+esac
+done
+if [ "$AWS_DEFAULT_REGION" = "" ];then
+	export AWS_DEFAULT_REGION=$(curl -s http://169.254.169.254/latest/dynamic/instance-identity/document |grep region|sed -r 's+^.*: "(.*)"+\1+')
+fi
+if [ "$AWS_SUBNET" = "" ];then
+	mac=$(curl -s http://169.254.169.254/latest/meta-data/network/interfaces/macs/)
+	export AWS_SUBNET=$(curl -s http://169.254.169.254/latest/meta-data/network/interfaces/macs/${mac}subnet-id/)
+fi
+
+if [ "$AWS_AMI_ID" = "" ];then
+	export AWS_AMI_ID=$(curl -s  http://169.254.169.254/latest/meta-data/ami-id)
+fi
+
+if [ "$AWS_SECURITY_GROUP" = "" ];then
+	export AWS_SECURITY_GROUP=$(curl -s  http://169.254.169.254/latest/meta-data/security-groups)
+fi
+
+set -- "${POSITIONAL[@]}" # restore positional parameters
+# echo "${bold}CLUSTER_ID:${normal} "${CLUSTER_ID}""
+# echo NETWORK_DIR_PATH = "${NETWORK_DIR_PATH}"
+# echo KILL_FLAG = "${KILL_FLAG}"
+# echo DEFAULT = "${DEFAULT}"
+
+if [ -z "${HOSTS_PATH+x}" ]; then
+	
+    INVENTORY_FILE="ec2.py"
+    AWS_ENABLED="True"
+else
+    echo "${bold}Static inventory mode${normal} with ${HOSTS_PATH}"
+    INVENTORY_FILE="${HOSTS_PATH}"
+    AWS_ENABLED="False"
+fi
+
+if [ -z "${CLUSTER_ID+x}" ]; then
+    echo -n "${bold}Cluster id is not set${normal} Please input cluster id: "
+    read CLUSTER_ID
+fi
+
+echo -n  ${bold}Cluster configuration: ${normal}${CLUSTER_ID}
+if [ -e cluster_configs/${CLUSTER_ID}.yaml ];then
+	 echo " (using ./cluster_configs/${CLUSTER_ID}.yaml)"
+else
+    printf "\n${RED}Aborting: Can not find cluster_configs/${CLUSTER_ID}.yaml.${NC}\n"
+    exit -1
+fi
+if [ -z "${KEY_FILE}" ];then
+    printf "${RED}ERROR: No ssh key (use -i to set), exiting...${NC}\n"
+    exit -1
+else 
+	echo "${bold}Access key file: ${normal} ${KEY_FILE}:"
+	if [ ! -f "${KEY_FILE}" ];then
+	    printf "${RED}Aborting: Key file not found${NC}\n"
+		exit -1
+	fi
+fi
+
+echo "${bold}AWS REGION: ${normal} ${AWS_DEFAULT_REGION}"
+echo -n "${bold}Network Configuration Folder (FABRIC_CFG_PATH ): ${normal}"
+echo "${FABRIC_CFG_PATH}"
+if [ "$AWS_ENABLED" ];then
+	echo "${bold}AWS mode configuration mode: ${normal}$AWS_ENABLED"
+fi
+	
+if [ ! -d group_vars/all/ ];then
+	mkdir -p group_vars/all/
+fi
+if [ -e group_vars/all/config.yaml ]
+then
+    rm group_vars/all/config.yaml
+fi
+
+cp cluster_configs/${CLUSTER_ID}.yaml group_vars/all/config.yaml
+
+if [ "$TEST_FLAG" = true ]
+then
+	echo "${bold}Running Test mode${normal} for $CLUSTER_ID"
+	if [ ! -z "${DRY_RUN}" ];then exit;fi
+	
+    ansible-playbook ${ANSIBLE_VERBOSE} aws-project-tester.yaml -i "${INVENTORY_FILE}" -u "${REMOTE_USER}" --private-key "${KEY_FILE}" --extra-vars "cluster_id=${CLUSTER_ID} aws_enabled=${AWS_ENABLED}"
+    exit
+fi
+
+if [ "$RESTART_FLAG" = true ]
+then
+	echo "${bold}Running Restart mode${normal} for $CLUSTER_ID"
+	if [ ! -z "${DRY_RUN}" ];then exit;fi
+	
+    ansible-playbook ${ANSIBLE_VERBOSE} aws-project-restarter.led=${AWS_ENABLED}"
+    exit
+fi
+
+if [ "$KILL_FLAG" = true ]
+then
+	echo "${bold}Stop mode${normal} for $CLUSTER_ID"
+	if [ ! -z "${DRY_RUN}" ];then exit;fi
+	
+    ansible-playbook ${ANSIBLE_VERBOSE} subplaybooks/aws-cluster-killer.yaml -i "${INVENTORY_FILE}" --extra-vars "cluster_id=${CLUSTER_ID} aws_enabled=${AWS_ENABLED}"
+	exit
+fi
+
+echo "${bold}Start cluster mode${normal} for $CLUSTER_ID"
+if [ -z "$NETWORK_DIR_PATH" ];then
+	NETWORK_DIR_PATH="${NETWORK_DIR_PATH_DEF}"
+    echo "${bold}Using/creating default network config path:${normal} $NETWORK_DIR_PATH"
+	if [ ! -z "${DRY_RUN}" ];then exit;fi
+	
+    ansible-playbook ${ANSIBLE_VERBOSE} aws-project-starter.yaml -i "${INVENTORY_FILE}" -u "${REMOTE_USER}" --private-key "${KEY_FILE}" --extra-vars "cluster_id=${CLUSTER_ID} aws_enabled=${AWS_ENABLED}"
+elif [ -e "${NETWORK_DIR_PATH}" ];then
+    echo "${bold}Using network configuration path:${normal} $NETWORK_DIR_PATH "
+	if [ ! -z "${DRY_RUN}" ];then exit;fi
+
+	ansible-playbook ${ANSIBLE_VERBOSE} aws-project-starter.yaml -i "${INVENTORY_FILE}" -u "${REMOTE_USER}" --private-key "${KEY_FILE}" --extra-vars "cluster_id=${CLUSTER_ID} network_dir=${NETWORK_DIR_PATH} aws_enabled=${AWS_ENABLED}"
+else
+    printf "${RED}Aborting: Network config folder not found: ${NETWORK_DIR_PATH}${NC}\n"
+    exit
+fi
