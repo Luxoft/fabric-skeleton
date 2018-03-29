@@ -105,26 +105,32 @@ else
 
 	spinner $! 1
 
-	aws ec2 authorize-security-group-egress --group-id ${sgId} \
-		--protocol "tcp" --port 22 --cidr "0.0.0.0/0" >& /dev/null &
-	spinner $! 1
-
-	
-	aws ec2 authorize-security-group-ingress --group-id ${sgId} \
-		--protocol "-1"  --cidr "0.0.0.0/0" >& /dev/null &
-	spinner $!
-
 	sgId="$(aws ec2 describe-security-groups \
 			--filter "Name=group-name,Values=${sgName}" \
 			--query SecurityGroups[0].GroupId --output text|grep -v -w -e ^None)"
 
+	if [ "$sgId" == "" ];then
+		echo "Aborting: Could not configure security group." 1>&2
+		exit -1
+	fi
+
+	aws ec2 authorize-security-group-egress --group-id ${sgId} \
+		--protocol "tcp" --port 22 --cidr "0.0.0.0/0" >& /dev/null &
+	spinner $! 1
+
+	aws ec2 authorize-security-group-ingress --group-id ${sgId} \
+		--protocol "tcp" --port 22 --cidr "0.0.0.0/0" >& /dev/null &
+	spinner $! 1
+	spinner $! 1
+	
+	aws ec2 authorize-security-group-ingress --group-id ${sgId} \
+		--protocol "-1"  --source-group "${sgName}" >& /dev/null &
+	spinner $!
+
 
 fi
 
-if [ "$sgId" == "" ];then
-	echo "Aborting: Could not configure security group." 1>&2
-	exit -1
-fi
+
 #Now handle roles
 roleArn="$(aws iam get-role --role-name "${roleName}" \
 			   --query Role.Arn --output text 2>/dev/null |grep -v -w -e ^None )"
