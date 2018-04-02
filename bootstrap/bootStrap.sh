@@ -1,10 +1,32 @@
 #!/usr/bin/env bash
-#instanceName="West1_$(date '+%y%m%d_%H%M%S')"
+#Copyright (c) Luxoft 2018
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 declare -a spin=( "-" "\\" "|" "/")
 
 spinner()
 {
+	OPTS="$SHELLOPT"
+	set +xv
+	xSet=""
+	vSet=""
+	if [[ $OPTS == *xtrace* ]];then
+		xSet=1
+	fi
+	if [[ $OPTS == *verbose* ]];then
+		vSet=1
+	fi
+	set +xv
 	pid=$1
 	shift
 	mode="FollowingReturn"
@@ -23,12 +45,22 @@ spinner()
 		index=$(( $(($RANDOM % 5)) - 1))
 		echo -ne "\b${spin[index]}"
 	fi
+	if [[ "$xSet" == "1" ]];then
+		set -x
+	fi
+	if [[ "$vSet" == "1" ]];then
+		set -v
+	fi
+		
 }
 
 instanceUser="ubuntu"
 instanceType="t2.micro"
 
-repoLocation=$(cd "$(dirname $0)/../";pwd)
+repoLocation='https://github.com/Luxoft/fabric-skeleton.git'
+#note guarantee we use the same branch when cloning
+repoBranch=$(git branch | sed -n -e 's/^\* \(.*\)/\1/p')
+
 scriptLocation=$(cd "$(dirname $0)";pwd)
 userDataFile="$scriptLocation/bootstrapUserData.sh"
 
@@ -43,8 +75,10 @@ roleArn=""
 instProfArn=""
 
 #AMI configuration
-source_ami_id="ami-79873901"
-source_ami_region="us-west-2"
+#source_ami_id="ami-79873901"
+#source_ami_region="us-west-2"
+source_ami_id="ami-50b1a030"
+source_ami_region="us-west-1"
 
 #required by create-role, specifies role applies to EC2
 roleRolePolicyDocument='{"Version": "2012-10-17", '\
@@ -124,7 +158,7 @@ else
 	spinner $! 1
 	
 	aws ec2 authorize-security-group-ingress --group-id ${sgId} \
-		--protocol "-1"  --source-group "${sgName}" >& /dev/null &
+		--protocol "-1"  --cidr "0.0.0.0/0" >& /dev/null &
 	spinner $!
 
 
@@ -230,35 +264,46 @@ echo "$pemData" > "${keyFile}"
 echo "    Saving private key to '$keyFile'"
 chmod u=rw,o=,g= "$keyFile"
 
-#Copy default ami and wait for it to be ready
-instance_ami="$(aws ec2 copy-image --name "${instanceName}" \
-						--source-image-id "${source_ami_id}" \
-						--source-region "${source_ami_region}" \
-						--query "ImageId" --output text)"
-if [ "$instance_ami" = "" ];then
-	echo "Aborting: Could not copy "\
-		 "default AMI '$source_ami_image' from '$source_ami_region'." 1>&2
-	exit
+#check to see if ami is in the region otherwise copy
+haveLocalAMI="$(aws ec2 describe-images \
+							--filter "Name=image-id,Values=${source_ami_id}" \
+				 			--query 'Images[0].State' --output text)"
+copiedAMI=0
+if [ "$haveLocalAMI" = "available" ];then
+	echo "Using EC2 AMI ${source_ami_id} in current region"
+	instance_ami=${source_ami_id}
+	copiedAMI=0
+else
+	
+	echo -n "Copying EC2 AMI ${source_ami_id} from ${source_ami_region} ${spin[3]}"
+	#Copy default ami and wait for it to be ready
+	instance_ami="$(aws ec2 copy-image --name "${instanceName}" \
+										--source-image-id "${source_ami_id}" \
+										--source-region "${source_ami_region}" \
+										--query "ImageId" --output text)"
+	if [ "$instance_ami" = "" ];then
+		echo "Aborting: Could not copy "\
+			 "default AMI '$source_ami_image' from '$source_ami_region'." 1>&2
+		exit
+	fi	
+	ready=1
+#	instance_ami=ami-50889e30
+	while [ "$ready" -ne 0 ];do
+		sleep 5 &
+		spinner $! 1
+
+		state="$(aws ec2 describe-images --filter "Name=image-id,Values=${instance_ami}" \
+					--query 'Images[0].State' --output text)"
+		#state="available"  #-- for debugging
+		if [ "$state" = "available"   ];then
+			echo -e "\b "
+			ready=0
+		fi
+	done
+	copiedAMI=1
 fi
 
-echo -n "Obtaining EC2 AMI  ${spin[3]}"
-ready=1
-#instance_ami=ami-50889e30
-while [ "$ready" -ne 0 ];do
-	sleep 5 &
-	spinner $! 1
-
-	state="$(aws ec2 describe-images --filter "Name=image-id,Values=${instance_ami}" \
-					--query 'Images[0].State' --output text)"
-	#state="available"  #-- for debugging
-	if [ "$state" = "available"   ];then
-		echo -e "\b "
-		ready=0
-	fi
-done
-
-
-echo -n "Starting EC2 instance "
+echo -n "Starting EC2 instance ${spin[3]}"
 instArn=$(aws ec2 run-instances --image-id "${instance_ami}"\
 			  --key-name "${keyName}" \
 		      --instance-type "${instanceType}" \
@@ -271,7 +316,7 @@ instArn=$(aws ec2 run-instances --image-id "${instance_ami}"\
 if [ "$instArn" = "" -o "$instArn" = "None" ];then
 	echo "Aborting: Could not start instance." 1>&2
 	exit -1
-else
+elif [ $copiedAMI -eq 1 ];then
 	#clean up
 	aws ec2 deregister-image   --image-id ${instance_ami} >&/dev/null
 fi
@@ -290,7 +335,6 @@ while [ "$accessible" -ne 0 ];do
 	sleep 5 &
 	#	pid=$!
 	spinner $! 1
-
 	accessible=$(ping -t1 -i1 -n -c 1 $PublicDnsName >/dev/null 2>&1;echo $?)
 	#Now make sure ssh is up
 	if [ "$accessible" -eq 0 ];then
@@ -324,17 +368,19 @@ echo "    Instance Region:  $region"
 #copy repos
 log="/var/tmp/configuration_$(date '+%y%m%d_%H%M').log"
 echo -n "Configuring development environment  "
-#Copy this repo
-scp -r -q -i  "${keyFile}" "${repoLocation}" "${instanceUser}@${PublicDnsName}:fabric-skeleton" &
+#Clone this repo
+#note using Bootstrap branch until this is integrated
+ssh -q -i "${keyFile}" "${instanceUser}@$PublicDnsName" \
+	"git clone ${repoLocation} --branch ${repoBranch} ~/fabric-skeleton >> $log  2>&1" &
 spinner $! 1
 #install dev software
 ssh -q -i  "$keyFile" "${instanceUser}@$PublicDnsName" \
-sudo -u root -H "~/$(basename ${repoLocation})/bootstrap/instanceConfig.sh >> $log  2>&1" &
+sudo -u root -H "~/fabric-skeleton/bootstrap/instanceConfig.sh >> $log  2>&1" &
 spinner $! 1
 
 #run pip install for the package
 ssh -q -i  "$keyFile" "${instanceUser}@${PublicDnsName}" \
-	"sudo -u root -H pip install -r ~/$(basename ${repoLocation})/ops/requirements.txt  >> $log 2>&1 " &
+	"sudo -u root -H pip install -r ~/fabric-skeleton/ops/requirements.txt  >> $log 2>&1 " &
 spinner $!
 
 echo

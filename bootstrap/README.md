@@ -22,9 +22,10 @@ Instructions on how to create a *frabic-skeleton* 'Blockchain-controller' AWS in
 2. Execute *bootStrap.sh* located in *fabric-skeleton/bootstrap*
 
 **To use the bootstrapping tools, an user must have**
-	1. A valid AWS account access_key_id, secret_access_key, and region
+
+1. A valid AWS account access_key_id, secret_access_key, and region
 	configured
-	2. Appropriate permissions:
+2. Appropriate permissions:
 	   + AmazonEC2FullAccess
 	   + AmazonS3FullAccess
 	   + IAMFullAccess
@@ -66,13 +67,14 @@ The *bootStrap.sh* script does the following
 		  + AmazonRDSReadOnlyAccess
 
 - Generates an **SSH Keypair** to used to access the instance
-- Copies the verified **Amazon Machine Image (AMI)** to the current
-region
+- Copies a verified **Amazon Machine Image (AMI)** to the current
+region if necessary
 - Create an new **EC2 Instance**
-- Configures the soft development environment on the instance,
-principally through **instanceConfig.sh**
-- Copies the local *fabric-skeleton* directory tree to the EC2 instance,
-  running it *pip* installer to complete software configuration
+- Clones the  *fabric-skeleton* repository from
+  'https://github.com/Luxoft/fabric-skeleton.git' to the EC2 instance.
+- Configures the software development environment on the instance,
+  first by executing **fabric-skeleton/bootstrap/instanceConfig.sh**
+  then by running **pip install -r fabric-skeleton/ops/requirements.txt**.
 
 	```
 	> cd fabric-skeleton/bootstrap
@@ -119,7 +121,8 @@ principally through **instanceConfig.sh**
 	Therefore to can be started with commands of the form
 
 	```
-
+	export AWS_DEFAULT_REGION="us-west-2"
+	export FABRIC_CFG_PATH="/home/ubuntu/fabric-skeleton/ops/network_dist"
 	./ops-cli -i ~/.ssh/Blockchain-controller.pem  -c single_sample_new
 	```
 	or
