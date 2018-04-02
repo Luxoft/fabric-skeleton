@@ -5,6 +5,8 @@ Basic stuff to bootstrap your Hyperledger Fabric project.
 # Project structure:
 
 - */src* - Basic Java project stub and Fabric integration tests
+- */bootstrap* - Contains script (blockchain.sh) to create Blockchain
+control node. See bootstrap/Readme.md
 - */ops* - boilerplate of devops
 - */network* contains artifacts and scripts to help run Fabric as well as **fabric-devnet.yaml** - network topology descriptor
 - */chaincodes* - Hyperledger Fabric chaincodes
@@ -29,3 +31,5 @@ gradle runShadow            // Run application jar
 ```
 gradle networkDown
 ```
+
+
