@@ -1,0 +1,26 @@
+# basic vars for deployment, taken from config.yaml.source
+---
+region: us-west-1
+instance_type: t2.micro
+ami: ami-50b1a030  # Ubuntu 16.04 LTS
+keypair: Blockchain-controller
+pem_path: /home/ubuntu/.ssh/Blockchain-controller.pem
+user_name: ubuntu
+project_name: Cluster1
+subnet_id: subnet-4b81f92c
+group_id: Blockchain-Fabric
+
+when_exists: skip_starter # one of [crush, skip_starter, none], to stop whole deployment, skip aws starter or deploy as usual
+
+monitoring_enabled: False # to start blockchain monitoring stack
+elk_enabled: False # to start external logging stack on ELK
+
+# fabric network configs
+orderers_count: 2
+peers_count_per_org: 2  # NOTE: peers_count_per_org for 1 organisation, total peers count is calculated as peers_count*organisations_count
+organisations_count: 2
+zookeeper_count: 3 # 3/5/7 - used when orderers_count > 1
+kafka_count: 4 # > 3 - used when orderers_count > 1
+business_nodes_count: 3
+
+# NOTE: feel free to add your project-specific variables
