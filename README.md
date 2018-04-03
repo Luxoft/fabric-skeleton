@@ -1,6 +1,9 @@
 # Fabric Skeleton
 
-Basic stuff to bootstrap your Hyperledger Fabric project.
+Skeleton framework to bootstrap your Hyperledger Fabric project.
+
+The Fabric Skeleton is a set of configuration files and scripts to quickly set up a Blockchain cluster. Designed for AWS
+this tool allows you to stop, start, and test a Blockchain built with Hyperledger's Fabric tool
 
 # Project structure:
 
@@ -32,4 +35,17 @@ gradle runShadow            // Run application jar
 gradle networkDown
 ```
 
+## License and Copyright
+
+Copyright &copy; Luxoft 2018
+
+This README and documentation is licensed under the Creative Commons
+Attribution-ShareAlike 4.0 International License. To view a copy of
+this license, visit http://creativecommons.org/licenses/by-sa/4.0/ or
+send a letter to Creative Commons, PO Box 1866, Mountain View, CA
+94042, USA.
+
+The software in this repo is copyright of the individual owners as
+specified in each file and is licensed under the Apache 2.0 license
+unless otherwise noted.
 
