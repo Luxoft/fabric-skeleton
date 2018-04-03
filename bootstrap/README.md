@@ -129,8 +129,41 @@ region if necessary
 	```
 	./Fabric-start.sh -i ~/.ssh/Blockchain-controller.pem  -c Blockchain-controller1
 	```
-*Farbric-start.sh is a proto-type which handles some environment
+	*Farbric-start.sh is a proto-type which handles some environment
 variables (AWS_DEFAULT_REGION and FABRIC_CFG_PATH) and file operations
 automatically, as well as proto-typing future options.*
 
+5. Notes on writing a configuration file:
+```
+region: us-west-1
+instance_type: t2.micro
+ami: ami-50b1a030  # Ubuntu 16.04 LTS
+keypair: Blockchain-controller
+pem_path: /home/ubuntu/.ssh/Blockchain-controller.pem
+user_name: ubuntu
+project_name: Cluster1
+subnet_id: subnet-4b81f92c
+group_id: Blockchain-Fabric
+```
+- At the current time, there is a field in the configuration YAML
+file  *group-id* specifying the AWS EC2 security group.
+
+	This value is ignored, but must be present.  The sercurity group
+*Blockchain-Fabric* is always used.
+
+- The *keypair* field refers to the name of the EC2 keypair on the AWS
+  system
+  [Amazon EC2 Key Pairs](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html).
+
+	The *pem_path* argument is a private SSH credential file which
+corresponds to that keypair.  The file should have *600* permissions.
+
+- The *subnet_id* field is required. The current subnet can be obtained
+on an ec2 instance with
+```
+curl -s
+http://169.254.169.254/latest/meta-data/network/interfaces/macs$(curl -s
+http://169.254.169.254/latest/meta-data/network/interfaces/macs/)subnet-id/
+```
+	
 

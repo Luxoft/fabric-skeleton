@@ -57,9 +57,17 @@ spinner()
 instanceUser="ubuntu"
 instanceType="t2.micro"
 
+#Git setting used when the fabric-skeleton is
+#clone _on the newly created instance_
 repoLocation='https://github.com/Luxoft/fabric-skeleton.git'
-#note guarantee we use the same branch when cloning
-repoBranch=$(git branch | sed -n -e 's/^\* \(.*\)/\1/p')
+
+repoBranch="master"  #Default, before we use the current branch we are in.
+if hash git 2> /dev/null ;then
+	currentBranch=$(git branch 2>/dev/null| sed -n -e 's/^\* \(.*\)/\1/p' )
+	if [ "$currentBranch" != "" ];then
+		repoBranch=$currentBranch
+	fi
+fi
 
 scriptLocation=$(cd "$(dirname $0)";pwd)
 userDataFile="$scriptLocation/bootstrapUserData.sh"
@@ -367,20 +375,26 @@ echo "    Instance Region:  $region"
 
 #copy repos
 log="/var/tmp/configuration_$(date '+%y%m%d_%H%M').log"
-echo -n "Configuring development environment  "
+echo -n "Cloning  ${repoLocation} branch ${repoBranch} "
 #Clone this repo
-#note using Bootstrap branch until this is integrated
 ssh -q -i "${keyFile}" "${instanceUser}@$PublicDnsName" \
-	"git clone ${repoLocation} --branch ${repoBranch} ~/fabric-skeleton >> $log  2>&1" &
+	"(set-x;git clone ${repoLocation} --branch ${repoBranch} ~/fabric-skeleton) >> $log 2>&1" &
 spinner $! 1
+
+#Do fetch and pull
+ssh -q -i "${keyFile}" "${instanceUser}@$PublicDnsName" \
+	"(set -x;cd ~/fabric-skeleton;ls;git fetch --all;git pull) >> $log 2>&1" &
+spinner $! 
+
+echo -n "Installing development software "
 #install dev software
 ssh -q -i  "$keyFile" "${instanceUser}@$PublicDnsName" \
-sudo -u root -H "~/fabric-skeleton/bootstrap/instanceConfig.sh >> $log  2>&1" &
+	"sudo -u root -H ~/fabric-skeleton/bootstrap/instanceConfig.sh >> $log 2>&1" &
 spinner $! 1
 
 #run pip install for the package
 ssh -q -i  "$keyFile" "${instanceUser}@${PublicDnsName}" \
-	"sudo -u root -H pip install -r ~/fabric-skeleton/ops/requirements.txt  >> $log 2>&1 " &
+	"sudo -u root -H pip install -r ~/fabric-skeleton/ops/requirements.txt >> $log 2>&1" &
 spinner $!
 
 echo
