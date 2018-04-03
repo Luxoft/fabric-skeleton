@@ -1,4 +1,4 @@
-#!/bin/bash 
+#!/bin/bash
 #Copyright (c) Luxoft 2018
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,15 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-if [ "$EUID" != 0 ];then
-	echo "Please run as root"
-	exit
-fi
-set -x
-apt-get -y update          
-#apt-get  -y upgrade
-apt-add-repository -y universe    
-apt-get install -y git
+
+git
 apt-get install -y build-essential make cmake scons curl git \
                                ruby autoconf automake autoconf-archive \
                                gettext libtool flex bison \
@@ -35,12 +28,4 @@ apt-get install -y docker=1.5-1
 apt-get install -y docker.io=1.13.1-0ubuntu1~16.04.2
 apt-get install -y awscli
 apt-get install -y maven  
-apt-get install -y gradle
-apt-get install -y golang-goprotobuf-dev
-#--apt-get install -y golang-go  
-#--curl -sL https://deb.nodesource.com/setup_9.x | bash -  
-#--apt-get install -y nodejs  
-#--npm install npm@latest -g  
-#--npm i -g n  
-#--n stable  
-curl -sSL https://goo.gl/kFFqh5 | (cd /usr/local; bash -   )
+apt-get install -y gradle  

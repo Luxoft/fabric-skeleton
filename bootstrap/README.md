@@ -162,7 +162,7 @@ corresponds to that keypair.  The file should have *600* permissions.
 on an ec2 instance with
 ```
 curl -s
-http://169.254.169.254/latest/meta-data/network/interfaces/macs$(curl -s
+http://169.254.169.254/latest/meta-data/network/interfaces/macs/$(curl -s
 http://169.254.169.254/latest/meta-data/network/interfaces/macs/)subnet-id/
 ```
 	
