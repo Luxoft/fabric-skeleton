@@ -12,4 +12,4 @@
 #####################
 
 # place here restarters of business nodes
-- import_playbook: subplaybooks/business-layer-restarter.yaml
+- import_playbook: subplaybooks/business-layer.yaml

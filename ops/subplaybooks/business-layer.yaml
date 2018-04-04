@@ -2,7 +2,7 @@
 # PROJECT SPECIFIC PART
 
 - name: Calculate nice network_dir path
-  hosts: localhost
+  hosts: localhost:business_nodes
   tasks:
     - set_fact:
         actual_network_dir: "{% if network_dir[0] == '/' or network_dir[0] == '~' %}{{network_dir}}{% else %}../{{network_dir}}{% endif %}"
@@ -17,13 +17,53 @@
 - name: Create fabric.yaml from template
   hosts: localhost
   tasks:
-    - template: src=../generator/fabric.yaml.j2 dest=../network_dist/fabric.yaml
+    - template: src=../generator/fabric.yaml.j2 dest="{{actual_network_dir}}/fabric.yaml"
 
-- name: Run Fabric configurator
-  hosts: localhost
-  environment:
-    fabric_config: ops/network_dist/fabric.yaml
+- name: Copy Fabric configurator stuff
+  hosts: business_nodes[0]
   tasks:
-    - shell: gradle networkConfigure
-      args:
-        chdir: ../../
+    - synchronize:
+        src: "../configurator/"
+        dest: "~/configurator/"
+
+- name: Copy network for configurator
+  hosts: business_nodes[0]
+  tasks:
+    - synchronize:
+        src: "{{ actual_network_dir }}/"
+        dest: "~/configurator/network/"
+
+- name: Copy chaincodes for configurator
+  hosts: business_nodes[0]
+  tasks:
+    - synchronize:
+        src: "../../chaincodes/"
+        dest: "~/configurator/chaincodes/"
+
+- name: Copy fabric.yaml for configurator
+  hosts: business_nodes[0]
+  tasks:
+    - synchronize:
+        src: "{{ actual_network_dir }}/fabric.yaml"
+        dest: "~/configurator/fabric.yaml"
+
+- name: Build configurator image
+  hosts: business_nodes[0]
+  tasks:
+    - docker_image:
+        state: present
+        force: true
+        dockerfile: "Dockerfile"
+        path: "~/configurator"
+        name: blockchain/configurator
+
+- name: Run configurator container
+  hosts: business_nodes[0]
+  tasks:
+    - docker_container:
+        name: "configurator"
+        image: "blockchain/configurator"
+        state: started
+        restart: yes
+        recreate: yes
+      become: yes
