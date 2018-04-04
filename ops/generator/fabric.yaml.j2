@@ -6,46 +6,32 @@
 admins:
     - org1.luxoft.com:
         name: admin
-        cert: crypto-config/peerOrganizations/organisation0.luxoft.com/users/Admin@organisation0.luxoft.com/msp/admincerts/Admin@organisation0.luxoft.com-cert.pem
-        privateKey: crypto-config/peerOrganizations/organisation0.luxoft.com/users/Admin@organisation0.luxoft.com/msp/keystore/*_sk
+        cert: network/crypto-config/peerOrganizations/organisation0.luxoft.com/users/Admin@organisation0.luxoft.com/msp/admincerts/Admin@organisation0.luxoft.com-cert.pem
+        privateKey: network/crypto-config/peerOrganizations/organisation0.luxoft.com/users/Admin@organisation0.luxoft.com/msp/keystore/*_sk
         mspID: Org0MSP
 
 eventhubs:
     - peer0.organisation0.luxoft.com:
-        url: grpcs://{{ hostvars['peer0']['ansible_host'] }}:7053
-        pemFile: crypto-config/peerOrganizations/organisation0.luxoft.com/peers/peer0.organisation0.luxoft.com/tls/ca.crt
+        url: grpcs://{% if aws_enabled == 'True' %}{{ hostvars[groups['tag_peer_index_0'][0]]['ansible_host'] }}{% else %}{{ hostvars[groups['peers'][0]]['ansible_host'] }}{% endif %}:7053
+        pemFile: network/crypto-config/peerOrganizations/organisation0.luxoft.com/peers/peer0.organisation0.luxoft.com/tls/ca.crt
         properties:
             sslProvider: openSSL
             negotiationType: TLS
             hostnameOverride: peer0.organisation0.luxoft.com
-    - peer1.organisation0.luxoft.com:
-        url: grpcs://{{ hostvars['peer1']['ansible_host'] }}:7053
-        pemFile: crypto-config/peerOrganizations/organisation0.luxoft.com/peers/peer1.organisation0.luxoft.com/tls/ca.crt
-        properties:
-            sslProvider: openSSL
-            negotiationType: TLS
-            hostnameOverride: peer1.organisation0.luxoft.com
 
 peers:
     - peer0.organisation0.luxoft.com:
-        url: grpcs://{{ hostvars['peer0']['ansible_host'] }}:7051
-        pemFile: crypto-config/peerOrganizations/organisation0.luxoft.com/peers/peer0.organisation0.luxoft.com/tls/ca.crt
+        url: grpcs://{% if aws_enabled == 'True' %}{{ hostvars[groups['tag_peer_index_0'][0]]['ansible_host'] }}{% else %}{{ hostvars[groups['peers'][0]]['ansible_host'] }}{% endif %}:7051
+        pemFile: network/crypto-config/peerOrganizations/organisation0.luxoft.com/peers/peer0.organisation0.luxoft.com/tls/ca.crt
         properties:
             sslProvider: openSSL
             negotiationType: TLS
             hostnameOverride: peer0.organisation0.luxoft.com
-    - peer1.organisation0.luxoft.com:
-        url: grpcs://{{ hostvars['peer1']['ansible_host'] }}:7051
-        pemFile: crypto-config/peerOrganizations/organisation0.luxoft.com/peers/peer1.organisation0.luxoft.com/tls/ca.crt
-        properties:
-            sslProvider: openSSL
-            negotiationType: TLS
-            hostnameOverride: peer1.organisation0.luxoft.com
 
 orderers:
     - orderer0.luxoft.com:
-        url: grpcs://{{ hostvars['orderer0']['ansible_host'] }}:7050
-        pemFile: crypto-config/ordererOrganizations/luxoft.com/orderers/orderer0.luxoft.com/tls/ca.crt
+        url: grpcs://{{ hostvars[groups['tag_orderer_index_0'][0]]['ansible_host'] }}:7050
+        pemFile: network/crypto-config/ordererOrganizations/luxoft.com/orderers/orderer0.luxoft.com/tls/ca.crt
         properties:
             sslProvider: openSSL
             negotiationType: TLS
@@ -56,7 +42,7 @@ chaincodes:
     - testchaincode:
         id: testchaincode
         sourceLocation: chaincode
-        sourceLocationPrefix: ../../chaincodes/TestChaincode
+        sourceLocationPrefix: chaincodes/TestChaincode
         version: v01
         type: GO_LANG
 
@@ -67,10 +53,8 @@ channels:
             - orderer0.luxoft.com
         peers:
             - peer0.organisation0.luxoft.com
-            - peer1.organisation0.luxoft.com
         eventhubs:
             - peer0.organisation0.luxoft.com
-            - peer1.organisation0.luxoft.com
-        txFile: channel-artifacts/org0channel.tx
+        txFile: network/channel-artifacts/org0channel.tx
         chaincodes:
             - testchaincode
