@@ -81,22 +81,25 @@ region if necessary
 	> ./bootStrap.sh
 	
 	Preparing to launch instance name 'Blockchain-controller'
-	Verifying AWS account
-	Configuring EC2 security groups and IAM roles
-	    Using existing 'Blockchain-Fabric' EC2 security group.
-	    Using existing 'Blockchain-Fabic-Role' IAM role.
-	    Using existing 'Blockchain-Fabic-Role' IAM Instance Profile
-	Configuring EC2 instance key pair 'Blockchain-controller'
-	    Saving private key to './Blockchain-controller.pem'
-	Obtaining EC2 AMI
-	Starting EC2 instance
-	    Instance Arn:     i-0c14cd34af31792a8
-	    Instance Address: ec2-18-144-18-69.us-west-1.compute.amazonaws.com
-	    Instance Region:  us-west-1
-	Configuring development environment
-	
-	The EC2 instance can now be accessed with:
-	  ssh -i ./Blockchain-controller.pem ubuntu@ec2-18-144-18-69.us-west-1.compute.amazonaws.com
+Verifying AWS account
+Configuring EC2 security groups and IAM roles
+    Using existing 'Blockchain-Fabic-Role' IAM role.
+    Using existing 'Blockchain-Fabic-Role' IAM Instance Profile
+    Using existing 'Blockchain-Fabric' EC2 security group.
+Configuring EC2 instance key pair 'Blockchain-controller'
+    Saving private key to './Blockchain-controller.pem'
+Using EC2 AMI ami-925144f2 in current region
+Starting EC2 instance
+    Instance Arn:       i-0e1b961ee63bbc3fe
+    Instance Address:   ec2-52-53-238-245.us-west-1.compute.amazonaws.com
+    Instance Region:    us-west-1
+    Instance Subnet:    subnet-33900568
+Configuring Instance (output: bootstrap_180404_1342.log)
+    Cloning: https://github.com/Luxoft/fabric-skeleton.git branch: Bootstrap
+    Installing development software
+
+The EC2 instance can now be accessed with:
+  ssh -i ./Blockchain-controller.pem ubuntu@ec2-52-53-238-245.us-west-1.compute.amazonaws.com
 	  ```
 
 	
