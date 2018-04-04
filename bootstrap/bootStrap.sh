@@ -85,7 +85,7 @@ instProfArn=""
 #AMI configuration
 #source_ami_id="ami-79873901"
 #source_ami_region="us-west-2"
-source_ami_id="ami-50b1a030"
+source_ami_id="ami-925144f2"
 source_ami_region="us-west-1"
 
 #required by create-role, specifies role applies to EC2
