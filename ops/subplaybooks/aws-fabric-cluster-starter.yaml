@@ -55,14 +55,16 @@
          image: "{{ ami }}"
          wait: true
          region: "{{ region }}"
-         count: "{{orderers_count}}"
+         count: 1
          instance_tags:
             Name: "{{project_name}}_orderer"
             cluster_id: "{{cluster_id}}"
             project_group: orderers
             project: "{{project_name}}"
+            orderer_index: "{{ item }}"
          vpc_subnet_id: "{{subnet_id}}"
          assign_public_ip: yes
+      with_items: "{{ range(orderers_count)|list }}"
       register: ec2orderers
 #
     - name: Create peers
@@ -191,7 +193,7 @@
         delay: 15
         timeout: 100
         state: started
-      with_items: "{{ ec2peers['results']|map(attribute='instances')|list + ec2cas['results']|map(attribute='instances')|list + ec2orderers.instances + ec2businessnodes.instances}}"
+      with_items: "{{ ec2peers['results']|map(attribute='instances')|list + ec2cas['results']|map(attribute='instances')|list + ec2orderers['results']|map(attribute='instances')|list + ec2businessnodes.instances}}"
 
     - name: Wait for SSH to come up multiorderers case
       when: "not skip_starter and orderers_count > 1"

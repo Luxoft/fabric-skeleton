@@ -2,7 +2,7 @@
 ---
 region: us-west-1
 instance_type: t2.micro
-ami: ami-77050a17
+ami: ami-925144f2
 pem_path: /home/ubuntu/.ssh/Blockchain-controller.pem
 keypair: Blockchain-controller
 user_name: ubuntu
