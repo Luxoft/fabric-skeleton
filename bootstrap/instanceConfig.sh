@@ -43,4 +43,4 @@ apt-get install -y golang-goprotobuf-dev
 #--npm install npm@latest -g  
 #--npm i -g n  
 #--n stable  
-curl -sSL https://goo.gl/kFFqh5 | (cd /usr/local; bash -   )
+curl -sSL https://goo.gl/6wtTN5 | (cd /usr/local;bash -s - -s -d)
