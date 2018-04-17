@@ -25,7 +25,7 @@ INVENTORY_FILE="hosts"
 ANSIBLE_VERBOSE=""
 DRY_RUN=""
 if [ "$FABRIC_CFG_PATH" = "" ];then
-	export FABRIC_CFG_PATH=$(dirname $0)/network_dist
+	export FABRIC_CFG_PATH=$(PWD)/network_dist
 fi
 
 
