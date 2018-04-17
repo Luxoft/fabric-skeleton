@@ -443,7 +443,7 @@ fi
 
 
 #Get Region
-region=$(ssh -q -i  "$keyFile" "${instanceUser}@$PublicDnsName"  curl -s http://169.254.169.254/latest/dynamic/instance-identity/document |grep region|sed -r 's+^.*: "(.*)"+\1+')
+region=$(ssh -q -i  "$keyFile" "${instanceUser}@$PublicDnsName"  curl -s http://169.254.169.254/latest/dynamic/instance-identity/document |grep region|awk -F\" '{print $4}')
 #Get Subnet
 mac=$(ssh -q -i  "$keyFile" "${instanceUser}@$PublicDnsName" curl -s http://169.254.169.254/latest/meta-data/network/interfaces/macs/)
 subnet=$(ssh -q -i  "$keyFile" "${instanceUser}@$PublicDnsName" curl -s http://169.254.169.254/latest/meta-data/network/interfaces/macs/${mac}subnet-id/)
@@ -480,7 +480,16 @@ spinner $! 1
 ssh -q -i  "$keyFile" "${instanceUser}@${PublicDnsName}" \
 	"sudo -u root -H pip install -r \
 	~/fabric-skeleton/ops/requirements.txt" >> $configLog 2>&1 &
-spinner $!
+spinner $! 1
+
+#automate definition of AWS_REGION
+ssh -q -i  "$keyFile" "${instanceUser}@${PublicDnsName}" \
+	"echo export AWS_REGION=$region >> ~/.bashrc" >> $configLog 2>&1 &
+spinner $! 1
+ssh -q -i  "$keyFile" "${instanceUser}@${PublicDnsName}" \
+	"echo export AWS_DEFAULT_REGION=$region >> ~/.bashrc" >> $configLog 2>&1 &
+spinner $! 1
+
 
 echo
 echo "The EC2 instance can now be accessed with:"
