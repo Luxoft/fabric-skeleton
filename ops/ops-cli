@@ -81,6 +81,7 @@ case $key in
 	--region)
 		shift
 		export AWS_DEFAULT_REGION=$1
+		export AWS_REGION=$1
 		shift
 		;;
 	-s|--subnet)
@@ -113,8 +114,10 @@ case $key in
     ;;
 esac
 done
-if [ "$AWS_DEFAULT_REGION" = "" ];then
-	export AWS_DEFAULT_REGION=$(curl -s http://169.254.169.254/latest/dynamic/instance-identity/document |grep region|sed -r 's+^.*: "(.*)"+\1+')
+if [ "$AWS_DEFAULT_REGION" = "" -o "$AWS_REGION" = ""  \
+	-o "$AWS_REGION" != "$AWS_DEFAULT_REGION" ];then
+	export AWS_DEFAULT_REGION=$(curl -s http://169.254.169.254/latest/dynamic/instance-identity/document |grep region|awk -F\" '{print $4}') 
+	export AWS_REGION="$AWS_DEFAULT_REGION"
 fi
 if [ "$AWS_SUBNET" = "" ];then
 	mac=$(curl -s http://169.254.169.254/latest/meta-data/network/interfaces/macs/)
