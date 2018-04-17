@@ -58,6 +58,7 @@ ERR=$(mktemp)
 
 instanceUser="ubuntu"
 instanceType="t2.micro"
+instanceDiskSize='30'  #largest free size
 
 #Git setting used when the fabric-skeleton is
 #clone _on the newly created instance_
@@ -111,7 +112,6 @@ iamPolicies=("AmazonEC2FullAccess" \
 			 "IAMReadOnlyAccess" \
 			 "AmazonRDSReadOnlyAccess")
 
-ec2TemplateArn="lt-0357fcc68a8e0b820"
 
 
 
@@ -374,11 +374,13 @@ instArn=$(aws ec2 run-instances --image-id "${instance_ami}"\
 			  --key-name "${keyName}" \
 		      --instance-type "${instanceType}" \
 			  --tag-specifications \
-			  'ResourceType=instance,Tags=[{Key=Name,Value='${instanceName}'}]'\
+			    'ResourceType=instance,Tags=[{Key=Name,Value='${instanceName}'}]'\
 			  --security-group-ids "${sgId}" \
 			  --iam-instance-profile '{"Name": "'${instProfName}'"}' \
-			  --query 'Instances[0].InstanceId'  --output text 2>> "${ERR}" )
-
+			  --query 'Instances[0].InstanceId' \
+			  --block-device-mapping \
+			    'DeviceName=/dev/sda1,Ebs={VolumeSize='${instanceDiskSize}'}' \
+			  --output text 2>> "${ERR}" )
 if [ "$instArn" = "" -o "$instArn" = "None" ];then
 	echo -e "\b "
 	echo "Aborting: Could not start instance." 1>&2
@@ -450,6 +452,7 @@ subnet=$(ssh -q -i  "$keyFile" "${instanceUser}@$PublicDnsName" curl -s http://1
 
 echo "    Instance Arn:       $instArn  "
 echo "    Instance Address:   $PublicDnsName"
+echo "    Instance Disk Size: ${instanceDiskSize}G"
 echo "    Instance Region:    $region"
 echo "    Instance Subnet:    $subnet"
 
