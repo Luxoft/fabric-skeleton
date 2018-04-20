@@ -2,11 +2,11 @@
 ---
 # VERIFY OR MODIFY the settings below for AWS REGION
 region: us-west-1   
-instance_type: t2.micro
 ami: ami-925144f2	    #AMI Supports Ubuntu 16.04 LTS
 subnet_id: subnet-33900568
 #
 # OPTIONAL (defaults work with accounts created by bootStrap.sh
+instance_type: t2.micro
 project_name: multi_sample
 keypair: Blockchain-controller 
 pem_path: /home/ubuntu/.ssh/Blockchain-controller.pem 

@@ -102,57 +102,193 @@ Therefore to can be started with commands of the form
 	```
 	./ops-cli -i ~/.ssh/Blockchain-controller.pem  -c Blockchain-controller1
 	```
-	*Farbric-start.sh is a proto-type which handles some environment
 
-#### Writing a configuration files
-The first part of the configuration file specifies the AWS environment
-in which the *fabric-skeleton* cluster is to be run.
+#### Specifying A Fabric Cluster
+The YAML file defining a cluster's configuration (and stored in fabric-skeleton/ops/cluster_configs) consisted of two section:
 
-The remainder specifies how nodes are to be configures.
+- AWS Environment Specification
+- Fabric Cluster Configuration
+
+Below is an example YAML file:
+
+```
+# basic vars for deployment, taken from config.yaml.source
+---
+# VERIFY OR MODIFY the settings below for AWS REGION
+region: us-west-1   
+ami: ami-925144f2	    #AMI Supports Ubuntu 16.04 LTS
+subnet_id: subnet-33900568
+#
+# OPTIONAL (defaults work with accounts created by bootStrap.sh
+instance_type: t2.micro
+project_name: cluster-config 
+keypair: Blockchain-controller 
+pem_path: /home/ubuntu/.ssh/Blockchain-controller.pem 
+user_name: ubuntu 
+#
+# DO NOT MODIFY
+group_id: Blockchain-Fabric 
+
+#
+#CLUSTER CONFIGURATION
+when_exists: skip_starter # one of [crush, skip_starter, none], to stop whole deployment, skip aws starter or deploy as usual
+
+monitoring_enabled: False # to start blockchain monitoring stack
+elk_enabled: False # to start external logging stack on ELK
+
+# fabric network configs
+orderers_count: 2
+peers_count_per_org: 2  # NOTE: peers_count_per_org for 1 organisation, total peers count is calculated as peers_count*organisations_count
+organisations_count: 2
+zookeeper_count: 3 # 3/5/7 - used when orderers_count > 1
+kafka_count: 4 # > 3 - used when orderers_count > 1
+business_nodes_count: 3
+
+# NOTE: feel free to add your project-specific variables
+
+```
 
 ##### AWS Environment Specification
+This section of the YAML config specifies the AWS environment (region, security groups, subnet) on which to create and run a fabric cluster.
+
+This information is typically at the top of the YAML file.
+
+An example is shown below.
 
 ```
-region: us-west-1
+# basic vars for deployment, taken from config.yaml.source
+---
+# VERIFY OR MODIFY the settings below for AWS REGION
+region: us-west-1   
+ami: ami-925144f2	    #AMI Supports Ubuntu 16.04 LTS
+subnet_id: subnet-33900568
+#
+# OPTIONAL (defaults work with accounts created by bootStrap.sh
 instance_type: t2.micro
-ami: ami-50b1a030  # Ubuntu 16.04 LTS
-keypair: Blockchain-controller
-pem_path: /home/ubuntu/.ssh/Blockchain-controller.pem
-user_name: ubuntu
-project_name: Cluster1
-subnet_id: subnet-4b81f92c
-group_id: Blockchain-Fabric
+project_name: cluster-config 
+keypair: Blockchain-controller 
+pem_path: /home/ubuntu/.ssh/Blockchain-controller.pem 
+user_name: ubuntu 
+#
+# DO NOT MODIFY
+group_id: Blockchain-Fabric 
+
+#
+#CLUSTER CONFIGURATION
 ```
+<br>
 
-- At the current time, there is a field in the configuration YAML
-file  *group-id* specifying the AWS EC2 security group.
+###### Argument Defintions and Usage
+The following arguments <strong>MUST</strong>be either <strong>set</strong>or <strong>verified</strong>as
+consitent with EC2 configuration of the host running *ops-cli* of the Blockchain
 
-	This value is ignored, but must be present.  The sercurity group
-*Blockchain-Fabric* is always used.
+<dl>
+  <dt><strong>region</strong></dt>
+  <dd>The <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html">AWS region</a> of the EC2 instance on which <em>ops-cli</em> is run.</dd>
 
-- The *keypair* field refers to the name of the EC2 keypair on the AWS
-  system
-  [Amazon EC2 Key Pairs](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html).
+<dt><strong>ami</strong></dt>
+  <dd>An <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/AMIs.html">Amazon
+  Machine Image (AMI)</a> available in the region of the EC2 instance on which <em>ops-cli</em> is run.</dd>
+  <dt><strong>subnet_id</strong></dt>
+  <dd>The <a
+  href="https://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_Subnets.html#SubnetSize">AWS
+  Virtual Private Cluster subnet</a> of the EC2 instance on which
+  <em>ops-cli</em> is run.<br><br>
+The current subnet can be obtained on an EC2 instance with:<br>
+<pre><code>
+curl -s http://169.254.169.254/latest/meta-data/network/interfaces/macs/$(curl -s http://169.254.169.254/latest/meta-data/network/interfaces/macs/)subnet-id/
+</pre></code>
+The subnet of the EC2 instance created by <em>bootStraph.sh</em> is displayed after completion of the instance's creation.
+</dd>
+</dl>
+  <br>
+The following arguments <strong>MAY</strong>modified, although the defaults work with
+any EC2 instance created by <em>bootStrap.sh</em>.
+<br><br>
+<dt><strong>instance_type</strong></dt>
+<dd>The <a href="https://aws.amazon.com/ec2/instance-types/">AWS EC2
+Instance Type</a> to be used when creating members of the fabric cluster
+</dd>
+</dl>
 
-	The *pem_path* argument is a private SSH credential file which
-corresponds to that keypair.  The file should have *600* permissions.
+<dt><strong>project_name</strong></dt>
+<dd>A convenient name for fabric cluster project.</a> 
+</dd>
+</dl>
 
-- The *subnet_id* field is required. The current subnet can be obtained
-on an EC2 instance with
-```
-curl -s
-http://169.254.169.254/latest/meta-data/network/interfaces/macs/$(curl -s
-http://169.254.169.254/latest/meta-data/network/interfaces/macs/)subnet-id/
-```
-It is also displayed by bootStraph.sh
+<dt><strong>keypair</strong></dt>
+<dd>A valid <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html">AWS ssh Key Pair instance</a> available in the region of the EC2 instance on which <em>ops-cli</em> is run.</dd>
+  
+</dd>
+</dl>
+
+<dt><strong>pem_path</strong></dt>
+<dd>The path to an SSH credential file containing a private key
+corresponding to the <strong>keypair</strong> argument above.<br>
+The file should have <em>600</em> permissions.
+</dd>
+</dl>
+
+<dt><strong>user_name</strong></dt>
+<dd>The use name under which the fabric is to be run, typically the
+login used to access he EC2 instance on which <em>ops-cli</em> is run</a> 
+</dd>
+</dl>
+<br>
+The following arguments <strong>SHOULD NOT</strong> modified.
+<dl>
+<dt><strong>group_id</strong><dt>
+<dd>This is the value of the <a href="">AWS EC2 Security Group</a> under
+which the fabric cluster is to be run.<br>
+At the present time, this value is ignored, but must be present in the YAML file.
+<br>The sercurity group
+<em>Blockchain-Fabric</em> is the default security group, and is created by <em>bootStraph.sh.</em>
+</dd>
+</dt>
+
+<br>
 
 ##### Fabric-skeleton Node Configuration
+##### AWS Environment Specification
+This section of the YAML config specifies how the cluster configuration should be (how many and what type of nodes in the cluster, business rules, and project specific variables).
+
+This information is typically at the bottom of the YAML file.
+
+An example is shown below.
 
 ```
-Needs detailed explanation
+# basic vars for deployment, taken from config.yaml.source
+---
+# VERIFY OR MODIFY the settings below for AWS REGION
+#
+#CLUSTER CONFIGURATION
+when_exists: skip_starter # one of [crush, skip_starter, none], to stop whole deployment, skip aws starter or deploy as usual
+
+monitoring_enabled: False # to start blockchain monitoring stack
+elk_enabled: False # to start external logging stack on ELK
+
+# fabric network configs
+orderers_count: 2
+peers_count_per_org: 2  # NOTE: peers_count_per_org for 1 organisation, total peers count is calculated as peers_count*organisations_count
+organisations_count: 2
+zookeeper_count: 3 # 3/5/7 - used when orderers_count > 1
+kafka_count: 4 # > 3 - used when orderers_count > 1
+business_nodes_count: 3
+
+# NOTE: feel free to add your project-specific variables
+
 ```
 
-##### ops-cli
+
+###### Argument Defintions and Usage
+
+```
+Needs detailed explanation, which the current author cannot provide
+```
+
+<br>
+
+#### ops-cli
 
 ops-cli is simple bash script to start the fabric-skeleton based cluster
 
