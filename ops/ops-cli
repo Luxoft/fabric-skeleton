@@ -24,8 +24,10 @@ REMOTE_USER=ubuntu
 INVENTORY_FILE="hosts"
 ANSIBLE_VERBOSE=""
 DRY_RUN=""
-NETWORK_DIR_PATH_DEF=$(dirname $0)/network_dist
-export FABRIC_CFG_PATH=$NETWORK_DIR_PATH_DEF
+if [ "$FABRIC_CFG_PATH" = "" ];then
+	export FABRIC_CFG_PATH=${PWD}/network_dist
+fi
+
 
 
 POSITIONAL=()
@@ -46,8 +48,7 @@ case $key in
     ;;
     -n|--network)
 		shift #past option flag
-		NETWORK_DIR_PATH="$1"
-		export FABRIC_CFG_PATH="$NETWORK_DIR_PATH"
+		export FABRIC_CFG_PATH="$1"
 		shift # past argument
     ;;
     -k|--kill|--stop)
@@ -81,6 +82,7 @@ case $key in
 	--region)
 		shift
 		export AWS_DEFAULT_REGION=$1
+		export AWS_REGION=$1
 		shift
 		;;
 	-s|--subnet)
@@ -113,8 +115,10 @@ case $key in
     ;;
 esac
 done
-if [ "$AWS_DEFAULT_REGION" = "" ];then
-	export AWS_DEFAULT_REGION=$(curl -s http://169.254.169.254/latest/dynamic/instance-identity/document |grep region|sed -r 's+^.*: "(.*)"+\1+')
+if [ "$AWS_DEFAULT_REGION" = "" -o "$AWS_REGION" = ""  \
+	-o "$AWS_REGION" != "$AWS_DEFAULT_REGION" ];then
+	export AWS_DEFAULT_REGION=$(curl -s http://169.254.169.254/latest/dynamic/instance-identity/document |grep region|awk -F\" '{print $4}') 
+	export AWS_REGION="$AWS_DEFAULT_REGION"
 fi
 if [ "$AWS_SUBNET" = "" ];then
 	mac=$(curl -s http://169.254.169.254/latest/meta-data/network/interfaces/macs/)
@@ -220,7 +224,7 @@ fi
 echo "${bold}Start cluster mode${normal} for $CLUSTER_ID"
 if [ -z "$NETWORK_DIR_PATH" ];then
 	NETWORK_DIR_PATH="${NETWORK_DIR_PATH_DEF}"
-    echo "${bold}Using/creating default network config path:${normal} $NETWORK_DIR_PATH"
+    echo "${bold}Using/creating default network config path:${normal} $FABRIC_CFG_PATH"
 	if [ ! -z "${DRY_RUN}" ];then exit;fi
     ansible-playbook ${ANSIBLE_VERBOSE} aws-project-starter.yaml \
 					 -i "${INVENTORY_FILE}" -u "${REMOTE_USER}"\
