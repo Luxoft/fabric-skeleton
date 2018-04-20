@@ -1,15 +1,22 @@
 # basic vars for deployment, taken from config.yaml.source
 ---
-region: us-west-1
+# VERIFY OR MODIFY the settings below for AWS REGION
+region: us-west-1   
 instance_type: t2.micro
-ami: ami-925144f2  # Ubuntu 16.04 LTS
-keypair: Blockchain-controller
-pem_path: /home/ubuntu/.ssh/Blockchain-controller.pem
-user_name: ubuntu
-project_name: Cluster1
-subnet_id: subnet-4b81f92c
-group_id: Blockchain-Fabric
+ami: ami-925144f2	    #AMI Supports Ubuntu 16.04 LTS
+subnet_id: subnet-33900568
+#
+# OPTIONAL (defaults work with accounts created by bootStrap.sh
+project_name: Blockchain-controller1
+keypair: Blockchain-controller 
+pem_path: /home/ubuntu/.ssh/Blockchain-controller.pem 
+user_name: ubuntu 
+#
+# DO NOT MODIFY
+group_id: Blockchain-Fabric 
 
+#
+#CLUSTER CONFIGURATION
 when_exists: skip_starter # one of [crush, skip_starter, none], to stop whole deployment, skip aws starter or deploy as usual
 
 monitoring_enabled: False # to start blockchain monitoring stack
