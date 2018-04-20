@@ -32,6 +32,7 @@ hash pip # make sure we get the correct pip
 pip install --upgrade pip
 pip install --upgrade setuptools
 apt-get install -y docker=1.5-1
+apt-get install -y docker-compose=1.8.0-2~16.04.1
 apt-get install -y docker.io=1.13.1-0ubuntu1~16.04.2
 apt-get install -y awscli
 apt-get install -y maven  
