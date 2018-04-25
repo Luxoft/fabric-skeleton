@@ -38,7 +38,7 @@ apt-get install -y awscli
 apt-get install -y maven  
 apt-get install -y gradle
 apt-get install -y golang-goprotobuf-dev
-#--apt-get install -y golang-go  
+apt-get install -y golang-go  
 #--curl -sL https://deb.nodesource.com/setup_9.x | bash -  
 #--apt-get install -y nodejs  
 #--npm install npm@latest -g  
