@@ -20,7 +20,7 @@ public class Launcher {
 
         logger.info("Application started");
 
-        SkeletonBlockchainConnector blockchain = SkeletonBlockchainConnectorFactory.create("paradox-channel", CONFIG);
+        SkeletonBlockchainConnector blockchain = SkeletonBlockchainConnectorFactory.create("testchannel", CONFIG);
 
         TestChaincode.Entity entity = TestChaincode.Entity.newBuilder()
                 .setName("name")
