@@ -143,7 +143,7 @@ func (t *TestChaincode) GetEntity(stub shim.ChaincodeStubInterface, ref *GetEnti
 	return entity.(*Entity), nil
 }
 
-// getEntity callback representing the getEntity of a chaincode
+// putEntity callback representing the putEntity of a chaincode
 func (t *TestChaincode) PutEntity(stub shim.ChaincodeStubInterface, ref *Entity) (*GetEntity, error) {
 
 	if err := t.checkPermissions(stub); err != nil {

@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
  */
 public class Launcher {
 
-    public static String CONFIG = "fabric-devnet.yaml";
+    protected static String CONFIG = "fabric-devnet.yaml";
 
     private static final Logger logger = LoggerFactory.getLogger(Launcher.class);
 

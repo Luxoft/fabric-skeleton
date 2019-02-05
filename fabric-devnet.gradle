@@ -12,6 +12,16 @@ task debugNetworkUp(type: Exec) {
     doLast { println("FABRIC-UP: Task completed") }
 }
 
+task debugNetworkDown(type: Exec) {
+    group = group_name
+
+    workingDir "$projectDir/network/local-debug"
+    commandLine 'sh', '-c', './fabric.sh down'
+
+    doLast { println("FABRIC-DOWN: Task completed") }
+}
+
+
 /**
  * Run Fabric network
  */
