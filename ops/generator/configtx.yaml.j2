@@ -1,46 +1,3 @@
-Profiles:
-
-    OneOrgOrdererGenesis:
-        Orderer:
-            <<: *OrdererDefaults
-            OrdererType: {% if groups['orderers'] | length == 1 %}solo{% else %}kafka{% endif %}
-
-            Addresses:
-                {% for orderer in groups['orderers'] %}- {{ hostvars[orderer]['inventory_hostname'] }}.luxoft.com:7050
-                {% endfor %}
-
-            Organizations:
-                - *OrdererOrg
-        Application:
-            <<: *ApplicationDefaults
-            Organizations:
-                - *OrdererOrg
-        Consortiums:
-            SampleConsortium:
-                Organizations:
-{% for org_number in range(organisations_count) %}
-                    - *Org{{org_number}}
-{% endfor %}
-
-{% for org_number in range(organisations_count) %}
-    Org{{org_number}}Channel:
-        Consortium: SampleConsortium
-        Application:
-            <<: *ApplicationDefaults
-            Organizations:
-                - *Org{{org_number}}
-
-{% endfor %}
-
-    JointChannel:
-        Consortium: SampleConsortium
-        Application:
-            <<: *ApplicationDefaults
-            Organizations:
-{% for org_number in range(organisations_count) %}
-                - *Org{{org_number}}
-{% endfor %}
-
 Organizations:
     - &OrdererOrg
         Name: OrdererOrg
@@ -89,3 +46,46 @@ Orderer: &OrdererDefaults
 
 Application: &ApplicationDefaults
     Organizations:
+
+Profiles:
+
+    OneOrgOrdererGenesis:
+        Orderer:
+            <<: *OrdererDefaults
+            OrdererType: {% if groups['orderers'] | length == 1 %}solo{% else %}kafka{% endif %}
+
+            Addresses:
+                {% for orderer in groups['orderers'] %}- {{ hostvars[orderer]['inventory_hostname'] }}.luxoft.com:7050
+                {% endfor %}
+
+            Organizations:
+                - *OrdererOrg
+        Application:
+            <<: *ApplicationDefaults
+            Organizations:
+                - *OrdererOrg
+        Consortiums:
+            SampleConsortium:
+                Organizations:
+{% for org_number in range(organisations_count) %}
+                    - *Org{{org_number}}
+{% endfor %}
+
+{% for org_number in range(organisations_count) %}
+    Org{{org_number}}Channel:
+        Consortium: SampleConsortium
+        Application:
+            <<: *ApplicationDefaults
+            Organizations:
+                - *Org{{org_number}}
+
+{% endfor %}
+
+    JointChannel:
+        Consortium: SampleConsortium
+        Application:
+            <<: *ApplicationDefaults
+            Organizations:
+{% for org_number in range(organisations_count) %}
+                - *Org{{org_number}}
+{% endfor %}
