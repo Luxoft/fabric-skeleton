@@ -417,7 +417,7 @@ while [ "$accessible" -ne 0 ];do
 	accessible=$(ping -i1 -n -c 1 $PublicDnsName >/dev/null 2>&1;echo $?)
 	#Now make sure ssh is up
 	if [ "$accessible" -eq 0 ];then
-		accessible=$(ssh -q -i  "$keyFile" "${instanceUser}@$PublicDnsName" \
+		accessible=$(ssh -q -i  "$keyFile" -o StrictHostKeyChecking=no "${instanceUser}@$PublicDnsName" \
 						 ls>/dev/null 2>&1;echo $?)
 	fi
 done
@@ -504,6 +504,10 @@ ssh -q -i  "$keyFile" "${instanceUser}@${PublicDnsName}" \
 	"echo export AWS_DEFAULT_REGION=$region >> ~/.bashrc" >> $configLog 2>&1 &
 spinner $! 1
 
+#automate subnetid settings
+ssh -q -i  "$keyFile" "${instanceUser}@${PublicDnsName}" \
+	"for i in ~/fabric-skeleton/ops/cluster_configs/*; do sed -i 's/subnet.*/subnet_id: $subnet/g' "\$i"; done" >> $configLog 2>&1 &
+spinner $! 1
 
 echo
 echo "The EC2 instance can now be accessed with:"

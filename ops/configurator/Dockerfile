@@ -19,9 +19,9 @@ RUN set -x \
 
 #fabric-skeleton specific configuration
 
-COPY fabric-configurator-1.2.16.jar fabric-configurator-1.2.16.jar
+COPY fabric-configurator-fat-1.3.2.jar fabric-configurator-fat-1.3.2.jar
 COPY network network
 COPY chaincodes chaincodes
 COPY fabric.yaml fabric.yaml
-CMD java -cp fabric-configurator-1.2.16.jar com.luxoft.fabric.config.Configurator --type config
+CMD java -cp fabric-configurator-fat-1.3.2.jar com.luxoft.fabric.config.Configurator --type config
 EXPOSE 8090
