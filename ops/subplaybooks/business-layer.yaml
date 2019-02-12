@@ -67,3 +67,15 @@
         restart: yes
         recreate: yes
       become: yes
+
+- name: Check configurator container is running
+  hosts: business_nodes[0]
+  tasks:
+    - name: Wait some time while configurator works
+      command: sleep 5
+    - name: Execute docker ps
+      command: docker ps -q
+      register: business_node_docker_status
+    - fail:
+        msg: "Docker container for business node is not alive"
+      when: business_node_docker_status.stdout == ""

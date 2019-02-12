@@ -58,6 +58,7 @@
       CORE_PEER_ID: "{{node_name}}.{{domain}}"
       CORE_PEER_ADDRESS: "{{node_name}}.{{domain}}:7051"
       CORE_PEER_GOSSIP_EXTERNALENDPOINT: "{{node_name}}.{{domain}}:7051"
+      CORE_PEER_CHAINCODELISTENADDRESS: "0.0.0.0:7052"
       CORE_PEER_LOCALMSPID: "Org{{organisation_index}}MSP"
       CORE_VM_ENDPOINT: unix:///host/var/run/docker.sock
       CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE: "{{node_name}}_net"

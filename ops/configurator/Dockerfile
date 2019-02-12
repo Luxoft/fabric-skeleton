@@ -17,6 +17,8 @@ RUN set -x \
                 openjdk8="$JAVA_ALPINE_VERSION" \
         && [ "$JAVA_HOME" = "$(docker-java-home)" ]
 
+#Workaround to avoid exeptions formn netty
+RUN ln -s  /lib/libcrypto.so.1.1 /lib/libcrypt.so.1
 #fabric-skeleton specific configuration
 
 COPY fabric-configurator-fat-1.3.2.jar fabric-configurator-fat-1.3.2.jar
