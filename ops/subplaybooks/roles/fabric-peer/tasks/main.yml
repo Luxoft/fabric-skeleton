@@ -88,3 +88,12 @@
     ports:
       - "{{api_port}}:7051"
       - "{{events_port}}:7053"
+
+- name: Wait some time while peer works
+  command: sleep 5
+- name: Execute docker ps
+  command: docker ps -q
+  register: peer_docker_status
+- fail:
+    msg: "Docker container for business node is not alive"
+  when: peer_docker_status.stdout == ""

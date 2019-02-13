@@ -486,13 +486,16 @@ ssh -q -i  "$keyFile" "${instanceUser}@$PublicDnsName" \
 	"sudo -u root -H ~/fabric-skeleton/bootstrap/instanceConfig.sh" >> $configLog 2>&1 &
 spinner $! 1
 
-#workaround for upgrading PyYaml
+#workaround for upgrading PyYaml and enum34
 ssh -q -i  "$keyFile" "${instanceUser}@${PublicDnsName}" \
 	"sudo  bash -c 'rm -rf /usr/lib/python2.7/dist-packages/yaml && rm -rf /usr/lib/python2.7/dist-packages/PyYAML-3.11.egg-info'" >> $configLog 2>&1 &
 
+ssh -q -i  "$keyFile" "${instanceUser}@${PublicDnsName}" \
+	"sudo apt-get remove python-enum34" >> $configLog 2>&1 &
+
 #run pip install for the package
 ssh -q -i  "$keyFile" "${instanceUser}@${PublicDnsName}" \
-	". .bashrc && sudo -u root -H pip install -r \
+	"sudo -u root -H pip install -r \
 	~/fabric-skeleton/ops/requirements.txt" >> $configLog 2>&1 &
 spinner $! 1
 

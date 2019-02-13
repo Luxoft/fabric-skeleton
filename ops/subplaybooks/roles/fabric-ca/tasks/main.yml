@@ -9,6 +9,15 @@
     src: "{{crypto_config_path}}/peerOrganizations/organisation{{organisation_index}}.{{domain}}/ca"
     dest: "{{ ansible_env.HOME}}"
 
+
+- name: Find key ca_keyfile name
+  shell: cd {{ ansible_env.HOME}}/ca && ls *sk
+  register: fabric_ca_server_ca_keyfile_name
+- fail:
+    msg: "Private key not found"
+  when: fabric_ca_server_ca_keyfile_name.stdout == ""
+
+
 - name: start ca
   become: yes
   docker_container:
@@ -17,10 +26,10 @@
     env:
       FABRIC_CA_HOME: /etc/hyperledger/fabric-ca-server
       FABRIC_CA_SERVER_CA_CERTFILE: "/etc/hyperledger/fabric-ca-server-config/ca.organisation{{organisation_index}}.{{domain}}-cert.pem"
-      FABRIC_CA_SERVER_CA_KEYFILE: /etc/hyperledger/fabric-ca-server-config/*_sk
+      FABRIC_CA_SERVER_CA_KEYFILE: /etc/hyperledger/fabric-ca-server-config/{{fabric_ca_server_ca_keyfile_name.stdout}}
       FABRIC_CA_SERVER_TLS_ENABLED: true
       FABRIC_CA_SERVER_TLS_CERTFILE: "/etc/hyperledger/fabric-ca-server-config/ca.organisation{{organisation_index}}.{{domain}}-cert.pem"
-      FABRIC_CA_SERVER_TLS_KEYFILE: /etc/hyperledger/fabric-ca-server-config/*_sk
+      FABRIC_CA_SERVER_TLS_KEYFILE: /etc/hyperledger/fabric-ca-server-config/{{fabric_ca_server_ca_keyfile_name.stdout}}
     command: "sh -c 'fabric-ca-server start -b admin:{{ca_admin_password}} -d'"
     volumes:
       - "{{ansible_env.HOME}}/ca/:/etc/hyperledger/fabric-ca-server-config"
@@ -30,3 +39,13 @@
     recreate: yes
     ports:
       - "{{api_port}}:7054"
+
+
+- name: Wait some time while ca works
+  command: sleep 5
+- name: Execute docker ps
+  command: docker ps -q
+  register: ca_docker_status
+- fail:
+    msg: "Docker container for business node is not alive"
+  when: ca_docker_status.stdout == ""

@@ -97,3 +97,12 @@
 #    log_driver: gelf
 #    log_options:
 #      gelf-address: udp://{{ hostvars[groups['elk'][0]]['ansible_host'] }}:12201
+
+- name: Wait some time while orderer works
+  command: sleep 5
+- name: Execute docker ps
+  command: docker ps -q
+  register: orderer_docker_status
+- fail:
+    msg: "Docker container for business node is not alive"
+  when: orderer_docker_status.stdout == ""
