@@ -12,7 +12,7 @@ admins:
 
 eventhubs:
     - peer0.organisation0.luxoft.com:
-        url: grpcs://{% if aws_enabled == 'True' %}{{ hostvars[groups['tag_peer_index_0'][0]]['ansible_host'] }}{% else %}{{ hostvars[groups['peers'][0]]['ansible_host'] }}{% endif %}:7053
+        url: grpcs://{% if aws_enabled == 'True' %}{{ hostvars[(groups['tag_peer_index_0']| intersect(groups['tag_organisation_index_0']))[0]]['ansible_host'] }}{% else %}{{ hostvars[groups['peers'][0]]['ansible_host'] }}{% endif %}:7053
         pemFile: network/crypto-config/peerOrganizations/organisation0.luxoft.com/peers/peer0.organisation0.luxoft.com/tls/ca.crt
         properties:
             sslProvider: openSSL
@@ -21,7 +21,7 @@ eventhubs:
 
 peers:
     - peer0.organisation0.luxoft.com:
-        url: grpcs://{% if aws_enabled == 'True' %}{{ hostvars[groups['tag_peer_index_0'][0]]['ansible_host'] }}{% else %}{{ hostvars[groups['peers'][0]]['ansible_host'] }}{% endif %}:7051
+        url: grpcs://{% if aws_enabled == 'True' %}{{ hostvars[(groups['tag_peer_index_0']| intersect(groups['tag_organisation_index_0']))[0]]['ansible_host'] }}{% else %}{{ hostvars[groups['peers'][0]]['ansible_host'] }}{% endif %}:7051
         pemFile: network/crypto-config/peerOrganizations/organisation0.luxoft.com/peers/peer0.organisation0.luxoft.com/tls/ca.crt
         properties:
             sslProvider: openSSL
