@@ -1,7 +1,7 @@
 ---
 node_name: "{{inventory_hostname}}"
 domain: luxoft.com
-image_tag: 1.3.0
+image_tag: 1.4.0
 crypto_config_path: ../../../../network/crypto-config
 channel_artifacts_path: ../../../../network/channel-artifacts
 api_port: 7050
