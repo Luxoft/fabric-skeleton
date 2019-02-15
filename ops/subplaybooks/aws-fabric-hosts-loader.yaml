@@ -31,13 +31,13 @@
 
     - name: Add new orderers to host group
       add_host:
-        hostname: "orderer{{item.0}}"
+        hostname: "orderer{{ hostvars[item]['ec2_tag_orderer_index'] }}"
         groupname: orderers
         api_port: 7050
-        ansible_host: "{{ item.1 }}"
+        ansible_host: "{{ item }}"
         ansible_ssh_private_key_file: "{{pem_path}}"
         ansible_ssh_user: "{{user_name}}"
-      with_indexed_items: "{{ groups['tag_project_group_orderers']|list }}"
+      with_items: "{{ groups['tag_project_group_orderers']|list }}"
 
     - name: debug
       debug:
