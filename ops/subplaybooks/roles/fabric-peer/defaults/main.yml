@@ -10,3 +10,4 @@ api_port: 7051
 events_port: 7053
 container_state: started
 couchdb_port: 5984
+operations_port: 9443

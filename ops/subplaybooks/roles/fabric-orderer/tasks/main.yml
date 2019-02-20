@@ -35,6 +35,7 @@
       max-size: "100m"
     ports:
       - "{{api_port}}:7050"
+      - "{{operations_port}}:{{operations_port}}"
     env:
       ORDERER_GENERAL_LOGLEVEL: debug
       ORDERER_GENERAL_LISTENADDRESS: 0.0.0.0
@@ -46,6 +47,8 @@
       ORDERER_GENERAL_TLS_PRIVATEKEY: /var/hyperledger/orderer/tls/server.key
       ORDERER_GENERAL_TLS_CERTIFICATE: /var/hyperledger/orderer/tls/server.crt
       ORDERER_GENERAL_TLS_ROOTCAS: "[/var/hyperledger/orderer/tls/ca.crt]"
+      ORDERER_OPERATIONS_LISTENADDRESS: "0.0.0.0:{{operations_port}}"
+      ORDERER_METRICS_PROVIDER: prometheus
     command: orderer
     recreate: yes
     volumes:
@@ -67,6 +70,7 @@
       max-size: "100m"
     ports:
       - "{{api_port}}:7050"
+      - "{{operations_port}}:{{operations_port}}"
     etc_hosts: "{{ etc_hosts }}"
     env:
       ORDERER_GENERAL_LISTENPORT: "{{api_port}}"
@@ -88,6 +92,8 @@
       ORDERER_GENERAL_TLS_PRIVATEKEY: /var/hyperledger/orderer/tls/server.key
       ORDERER_GENERAL_TLS_CERTIFICATE: /var/hyperledger/orderer/tls/server.crt
       ORDERER_GENERAL_TLS_ROOTCAS: "[/var/hyperledger/orderer/tls/ca.crt]"
+      ORDERER_OPERATIONS_LISTENADDRESS: "{{node_name}}.{{domain}}:{{operations_port}}"
+      ORDERER_METRICS_PROVIDER: prometheus
     command: orderer
     recreate: yes
     volumes:
