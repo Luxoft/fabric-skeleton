@@ -1,0 +1,23 @@
+# config file version
+apiVersion: 1
+
+# list of datasources to insert/update depending
+# what's available in the database
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    orgId: 1
+    url: http://prometheus.luxoft.com:9090
+    password: ""
+    user: ""
+    database: ""
+    basicAuth: false
+    isDefault: true
+    # <map> fields that will be converted to json and stored in jsonData
+    jsonData:
+      httpMethod: "GET"
+      keepCookies: []
+      timeInterval: "5s"
+    version: 1
+    editable: true

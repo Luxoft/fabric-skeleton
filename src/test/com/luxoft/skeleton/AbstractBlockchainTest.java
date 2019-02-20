@@ -1,45 +1,51 @@
 package com.luxoft.skeleton;
 
+import com.luxoft.fabric.FabricConfig;
+import com.luxoft.fabric.config.NetworkManager;
 import com.luxoft.skeleton.fabric.SkeletonBlockchainConnector;
-import com.luxoft.skeleton.fabric.SkeletonBlockchainConnectorFactory;
 import com.luxoft.skeleton.fabric.proto.TestChaincode;
+import org.junit.BeforeClass;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import java.io.IOException;
+
+import static org.junit.Assert.*;
+import static org.junit.Assert.fail;
 
 /**
  * Blockchain tests ancestor
  */
 public abstract class AbstractBlockchainTest {
 
-    protected void sanityCheck(String configPath, String channelId) throws Exception {
-        String NAME = "name:" + System.currentTimeMillis();
+    private static final Logger LOG = LoggerFactory.getLogger(AbstractBlockchainTest.class);
 
+    @BeforeClass
+    public static void beforeClass() throws IOException {
+        LOG.info("Starting network configuration");
+        NetworkManager.configNetwork(FabricConfig.getConfigFromFile(Launcher.CONFIG));
+        LOG.info("Finished network configuration");
+    }
 
-        TestChaincode.Entity entity = TestChaincode.Entity.newBuilder()
-                .setName(NAME)
-                .setDescription("description1")
-                .setType(TestChaincode.Type.COMPANY)
-                .build();
-
-        SkeletonBlockchainConnector blockchain = SkeletonBlockchainConnectorFactory.create(channelId, configPath);
-
+    protected void putEntity(String NAME, TestChaincode.Entity entity, SkeletonBlockchainConnector blockchain) throws InterruptedException, java.util.concurrent.ExecutionException {
         TestChaincode.GetEntity entityRef = blockchain.putEntity(entity).get();
 
-        assertNotNull("Null response received", entityRef);
-        assertEquals(NAME, entityRef.getName());
+        if (entityRef == null) {
+            fail("Null response received");
+        } else {
+            assertEquals(NAME, entityRef.getName());
+        }
 
         TestChaincode.Entity receivedEntity = blockchain.getEntity(entityRef).get();
 
-        assertNotNull("Null response received", receivedEntity);
-        assertEquals(entity.getName(), receivedEntity.getName());
-        assertEquals(entity.getDescription(), receivedEntity.getDescription());
-        assertEquals(entity.getType(), receivedEntity.getType());
-
-        TestChaincode.History history = blockchain.getBalanceHistory(entityRef).get();
-
-        assertNotNull("Null response received", history);
-        assertEquals(entityRef.getName(), history.getKey());
-        assertEquals(1, history.getHistoryCount());
+        if (receivedEntity == null) {
+            fail("Null response received");
+        } else {
+            assertEquals(entity.getName(), receivedEntity.getName());
+            assertEquals(entity.getDescription(), receivedEntity.getDescription());
+            assertEquals(entity.getType(), receivedEntity.getType());
+        }
     }
+
+
 }
