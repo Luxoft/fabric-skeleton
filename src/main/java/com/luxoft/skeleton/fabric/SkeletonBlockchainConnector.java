@@ -13,15 +13,12 @@ public class SkeletonBlockchainConnector extends FabricConnector {
 
     private static final String TEST_CHAINCODE_NAME = "testchaincode";
 
-
-
     public SkeletonBlockchainConnector(User user, String channelName, FabricConfig fabricConfig) throws Exception {
         super(user, channelName, fabricConfig);
     }
 
-
     public CompletableFuture<TestChaincode.GetEntity> putEntity(TestChaincode.Entity entity) {
-        return buildTransactionFuture(buildProposalRequest("PutEntity", TEST_CHAINCODE_NAME, new byte[][]{entity.toByteArray()}))
+        return invoke("PutEntity", TEST_CHAINCODE_NAME, new byte[][]{entity.toByteArray()})
                 .thenApply(transactionEvent -> {
 
                     if (transactionEvent == null || !transactionEvent.isValid()) throw new RuntimeException("Transaction failure");

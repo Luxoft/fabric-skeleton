@@ -66,6 +66,10 @@ repoLocation='https://github.com/Luxoft/fabric-skeleton.git'
 
 repoBranch="master"  #Default, before we use the current branch we are in.
 if hash git 2> /dev/null ;then
+    customRepoLocation=$(git config --get remote.origin.url)
+    if [ "customRepoLocation" != "" ];then
+		repoLocation=$customRepoLocation
+	fi
 	currentBranch=$(git branch 2>/dev/null| sed -n -e 's/^\* \(.*\)/\1/p' )
 	if [ "$currentBranch" != "" ];then
 		repoBranch=$currentBranch
@@ -410,10 +414,10 @@ while [ "$accessible" -ne 0 ];do
 	sleep 5 &
 	#	pid=$!
 	spinner $! 1
-	accessible=$(ping -t1 -i1 -n -c 1 $PublicDnsName >/dev/null 2>&1;echo $?)
+	accessible=$(ping -i1 -n -c 1 $PublicDnsName >/dev/null 2>&1;echo $?)
 	#Now make sure ssh is up
 	if [ "$accessible" -eq 0 ];then
-		accessible=$(ssh -q -i  "$keyFile" "${instanceUser}@$PublicDnsName" \
+		accessible=$(ssh -q -i  "$keyFile" -o StrictHostKeyChecking=no "${instanceUser}@$PublicDnsName" \
 						 ls>/dev/null 2>&1;echo $?)
 	fi
 done
@@ -463,7 +467,7 @@ echo "Configuring Instance (output: $configLog)"
 echo -n "    Cloning: ${repoLocation} branch: ${repoBranch}  "
 #Clone this repo
 ssh -q -i "${keyFile}" "${instanceUser}@$PublicDnsName" \
-	"(sleep5;set-x;git clone ${repoLocation}\
+	"(sleep 5;set -x;git clone ${repoLocation}\
 	 --branch ${repoBranch} ~/fabric-skeleton) ">> $configLog 2>&1 &
 spinner $! 1
 
@@ -471,13 +475,23 @@ spinner $! 1
 #Do fetch and pull
 ssh -q -i "${keyFile}" "${instanceUser}@$PublicDnsName" \
 	"(set -x;cd ~/fabric-skeleton;ls;git fetch --all;git pull)" >> $configLog 2>&1 &
-spinner $! 
+spinner $!
+
+ssh -q -i  "$keyFile" "${instanceUser}@${PublicDnsName}" \
+	"sudo  bash -c ' echo LC_ALL="en_US.UTF-8" >> /etc/default/locale'" >> $configLog 2>&1 &
 
 echo -n "    Installing development software  "
 #install dev software
 ssh -q -i  "$keyFile" "${instanceUser}@$PublicDnsName" \
 	"sudo -u root -H ~/fabric-skeleton/bootstrap/instanceConfig.sh" >> $configLog 2>&1 &
 spinner $! 1
+
+#workaround for upgrading PyYaml and enum34
+ssh -q -i  "$keyFile" "${instanceUser}@${PublicDnsName}" \
+	"sudo  bash -c 'rm -rf /usr/lib/python2.7/dist-packages/yaml && rm -rf /usr/lib/python2.7/dist-packages/PyYAML-3.11.egg-info'" >> $configLog 2>&1 &
+
+ssh -q -i  "$keyFile" "${instanceUser}@${PublicDnsName}" \
+	"sudo apt-get remove python-enum34" >> $configLog 2>&1 &
 
 #run pip install for the package
 ssh -q -i  "$keyFile" "${instanceUser}@${PublicDnsName}" \
@@ -493,6 +507,10 @@ ssh -q -i  "$keyFile" "${instanceUser}@${PublicDnsName}" \
 	"echo export AWS_DEFAULT_REGION=$region >> ~/.bashrc" >> $configLog 2>&1 &
 spinner $! 1
 
+#automate subnetid settings
+ssh -q -i  "$keyFile" "${instanceUser}@${PublicDnsName}" \
+	"for i in ~/fabric-skeleton/ops/cluster_configs/*; do sed -i 's/subnet.*/subnet_id: $subnet/g' "\$i"; done" >> $configLog 2>&1 &
+spinner $! 1
 
 echo
 echo "The EC2 instance can now be accessed with:"

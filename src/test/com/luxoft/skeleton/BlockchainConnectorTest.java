@@ -2,14 +2,16 @@ package com.luxoft.skeleton;
 
 
 import com.luxoft.fabric.FabricConfig;
-import com.luxoft.fabric.utils.NetworkManager;
+import com.luxoft.fabric.config.NetworkManager;
 import com.luxoft.skeleton.fabric.SkeletonBlockchainConnector;
 import com.luxoft.skeleton.fabric.SkeletonBlockchainConnectorFactory;
 import com.luxoft.skeleton.fabric.proto.TestChaincode;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.runners.MockitoJUnitRunner;
+
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
@@ -21,16 +23,22 @@ import static org.junit.Assert.fail;
  *
  * Network runs with help of gradle docker-compose plugin.
  */
-@RunWith(MockitoJUnitRunner.class)
+
 public class BlockchainConnectorTest extends AbstractBlockchainTest {
+
+    private static final Logger LOG = LoggerFactory.getLogger(BlockchainConnectorTest.class);
 
     @BeforeClass
     public static void beforeClass() throws IOException {
+        LOG.info("Starting network configuration");
         NetworkManager.configNetwork(FabricConfig.getConfigFromFile(Launcher.CONFIG));
+        LOG.info("Finished network configuration");
     }
 
     @Test
     public void testGetPutEntity() throws Exception {
+
+        LOG.info("Starting test");
 
         String NAME = "name:" + System.currentTimeMillis();
 

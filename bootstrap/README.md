@@ -126,7 +126,7 @@ The EC2 instance can now be accessed with:
 	```
 	export AWS_DEFAULT_REGION="us-west-2"
 	export FABRIC_CFG_PATH="/home/ubuntu/fabric-skeleton/ops/network_dist"
-	./ops-cli -i ~/.ssh/Blockchain-controller.pem  -c single_sample_new
+	./ops-cli -i ~/.ssh/Blockchain-controller.pem  -c single_sample
 	```
 	or
 	```

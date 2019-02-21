@@ -96,7 +96,7 @@ To start a *fabric-skeleton* workspace,
 
 Therefore to can be started with commands of the form
 	```
-	./ops-cli -i ~/.ssh/Blockchain-controller.pem  -c single_sample_new
+	./ops-cli -i ~/.ssh/Blockchain-controller.pem  -c single_sample
 	```
 	or
 	```

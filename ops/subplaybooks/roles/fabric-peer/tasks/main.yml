@@ -58,6 +58,7 @@
       CORE_PEER_ID: "{{node_name}}.{{domain}}"
       CORE_PEER_ADDRESS: "{{node_name}}.{{domain}}:7051"
       CORE_PEER_GOSSIP_EXTERNALENDPOINT: "{{node_name}}.{{domain}}:7051"
+      CORE_PEER_CHAINCODELISTENADDRESS: "0.0.0.0:7052"
       CORE_PEER_LOCALMSPID: "Org{{organisation_index}}MSP"
       CORE_VM_ENDPOINT: unix:///host/var/run/docker.sock
       CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE: "{{node_name}}_net"
@@ -87,3 +88,12 @@
     ports:
       - "{{api_port}}:7051"
       - "{{events_port}}:7053"
+
+- name: Wait some time while peer works
+  command: sleep 5
+- name: Execute docker ps
+  command: docker ps -q
+  register: peer_docker_status
+- fail:
+    msg: "Docker container for business node is not alive"
+  when: peer_docker_status.stdout == ""
