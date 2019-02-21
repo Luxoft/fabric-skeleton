@@ -103,7 +103,6 @@ services:
     container_name: grafana.luxoft.com
     image: grafana/grafana:5.4.3
     environment:
-      - GF_SERVER_ROOT_URL=http://grafana.luxoft.com
       - GF_SECURITY_ADMIN_PASSWORD=secret
       - GF_PATHS_PROVISIONING=/etc/grafana/provisioning/
     ports:

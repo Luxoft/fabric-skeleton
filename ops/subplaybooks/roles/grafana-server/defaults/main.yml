@@ -1,0 +1,3 @@
+---
+# defaults file for grafana-server
+prometheus_endpoint: "http://localhost:9090"

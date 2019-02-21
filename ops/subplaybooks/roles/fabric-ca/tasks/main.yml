@@ -47,5 +47,5 @@
   command: docker ps -q
   register: ca_docker_status
 - fail:
-    msg: "Docker container for business node is not alive"
+    msg: "Docker container for ca is not alive"
   when: ca_docker_status.stdout == ""

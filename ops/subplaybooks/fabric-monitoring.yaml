@@ -1,9 +1,13 @@
 # Prometheus + Graphana stack for monitoring
 ---
-#- hosts: monitoring[0]
-#  roles:
-#    - prometheus-server-docker
+- hosts: monitoring_prometheus[0]
+  roles:
+    - prometheus-server-docker
+  vars:
+    scrape_configs: "{{ [{'name': 'prometheus', 'targets':['localhost:9090']}] }} + {{ [ { 'name':'fabric peers', 'targets':groups['tag_project_group_peers']|default([])|map('regex_replace','^(.*)$','\\1:9443') |list} ] }} + {{ [ { 'name':'fabric orderers', 'targets':groups['tag_project_group_orderers']|default([])|map('regex_replace','^(.*)$','\\1:9443') |list} ] }}"
 
-#- hosts: monitoring[0]
-#  roles:
-#    - grafana-server
+- hosts: monitoring_grafana[0]
+  roles:
+    - grafana-server
+  vars:
+    prometheus_endpoint: "http://{{ groups['tag_project_group_monitoring_prometheus'][0] }}:9090"

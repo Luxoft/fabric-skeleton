@@ -18,9 +18,9 @@
 # deploys fabric blockchain infrastructure on prepared vms
 - import_playbook: subplaybooks/fabric-network.yaml
 
-# deploys fabric monitoring subsystem todo
-#- import_playbook: subplaybooks/fabric-monitoring.yaml
-#  when: monitoring_enabled
+# deploys fabric monitoring subsystem
+- import_playbook: subplaybooks/fabric-monitoring.yaml
+  when: monitoring_enabled
 
 # deploys logging subsystem todo
 #- import_playbook: subplaybooks/fabric-elk.yaml

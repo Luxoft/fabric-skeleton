@@ -97,5 +97,5 @@
   command: docker ps -q
   register: peer_docker_status
 - fail:
-    msg: "Docker container for business node is not alive"
+    msg: "Docker container for peer node is not alive"
   when: peer_docker_status.stdout == ""
