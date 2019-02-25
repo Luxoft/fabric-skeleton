@@ -9,16 +9,25 @@ global:
 # A scrape configuration containing exactly one endpoint to scrape:
 # Here it's Prometheus itself.
 scrape_configs:
-  # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
   - job_name: 'prometheus'
-
-    # Override the global default and scrape targets from this job every 5 seconds.
     scrape_interval: 5s
-
     static_configs:
       - targets: ['localhost:9090']
-  - job_name: 'fabric'
+  - job_name: 'fabric peers'
     scrape_interval: 5s
+    scheme: https
+    tls_config:
+      ca_file: /etc/prometheus/tls/tlsca.luxoft.com-cert.pem
+      cert_file: /etc/prometheus/tls/prometheus.crt
+      key_file: /etc/prometheus/tls/prometheus.key
     static_configs:
       - targets: ['peer0.luxoft.com:9443']
-      - targets: ['orderer.luxoft.com:9444']
+  - job_name: 'fabric orderers'
+    scrape_interval: 5s
+    scheme: https
+    tls_config:
+      ca_file: /etc/prometheus/tls/tlsca.orderer.luxoft.com-cert.pem
+      cert_file: /etc/prometheus/tls/prometheus_signed_for_orderer.crt
+      key_file: /etc/prometheus/tls/prometheus.key
+    static_configs:
+        - targets: ['orderer.luxoft.com:9444']

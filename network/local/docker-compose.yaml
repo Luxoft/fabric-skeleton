@@ -27,7 +27,7 @@ services:
     container_name: orderer.luxoft.com
     image: hyperledger/fabric-orderer:1.4.0
     environment:
-      - ORDERER_GENERAL_LOGLEVEL=debug
+      - FABRIC_LOGGING_SPEC=debug
       - ORDERER_GENERAL_LISTENADDRESS=0.0.0.0
       - ORDERER_GENERAL_GENESISMETHOD=file
       - ORDERER_GENERAL_GENESISFILE=/etc/hyperledger/configtx/genesis.block
@@ -39,6 +39,11 @@ services:
       - ORDERER_GENERAL_TLS_ROOTCAS=[/etc/hyperledger/crypto/orderer/tls/ca.crt, /etc/hyperledger/crypto/peerOrg1/tls/ca.crt]
       - ORDERER_OPERATIONS_LISTENADDRESS=0.0.0.0:9444
       - ORDERER_METRICS_PROVIDER=prometheus
+      - ORDERER_OPERATIONS_TLS_ENABLED=true
+      - ORDERER_OPERATIONS_TLS_PRIVATEKEY=/etc/hyperledger/crypto/orderer/tls/server.key
+      - ORDERER_OPERATIONS_TLS_CERTIFICATE=/etc/hyperledger/crypto/orderer/tls/server.crt
+      - ORDERER_OPERATIONS_TLS_CLIENTROOTCAS=[/etc/hyperledger/crypto/orderer/tls/ca.crt]
+      - ORDERER_OPERATIONS_TLS_CLIENTAUTHREQUIRED=true
     working_dir: /opt/gopath/src/github.com/hyperledger/fabric/orderers
     command: orderer
     ports:
@@ -48,6 +53,8 @@ services:
         - ../channel-artifacts:/etc/hyperledger/configtx
         - ../crypto-config/ordererOrganizations/luxoft.com/orderers/orderer.luxoft.com/:/etc/hyperledger/crypto/orderer
         - ../crypto-config/peerOrganizations/luxoft.com/peers/peer0.luxoft.com/:/etc/hyperledger/crypto/peerOrg1
+        # Having orderer.yaml here is workaround for bug in this file in fabric 1.4. It lacks ClientRootCAs variable
+        - ./orderer.yaml:/etc/hyperledger/fabric/orderer.yaml
 
   peer0.luxoft.com:
     container_name: peer0.luxoft.com
@@ -60,6 +67,11 @@ services:
       - CORE_PEER_ADDRESS=peer0.luxoft.com:7051
       - CORE_OPERATIONS_LISTENADDRESS=0.0.0.0:9443
       - CORE_METRICS_PROVIDER=prometheus
+      - CORE_OPERATIONS_TLS_ENABLED=true
+      - CORE_OPERATIONS_TLS_KEY_FILE=/etc/hyperledger/crypto/peer/tls/server.key
+      - CORE_OPERATIONS_TLS_CERT_FILE=/etc/hyperledger/crypto/peer/tls/server.crt
+      - CORE_OPERATIONS_TLS_CLIENTAUTHREQUIRED=true
+      - CORE_OPERATIONS_TLS_CLIENTROOTCAS_FILES=/etc/hyperledger/crypto/peer/tls/ca.crt
     ports:
       - 7051:7051
       - 7053:7053
@@ -96,6 +108,7 @@ services:
       - 9090:9090/tcp
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ../crypto-config/prometheusOrganizations/luxoft.com/tls:/etc/prometheus/tls
     depends_on:
       - peer0.luxoft.com
 
