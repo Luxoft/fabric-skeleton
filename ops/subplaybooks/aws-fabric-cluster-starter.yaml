@@ -140,12 +140,15 @@
          region: "{{ region }}"
          count: 1
          instance_tags:
-            Name: "{{project_name}}_monitoring_prometheus"
+            Name: "{{project_name}}_monitoring_prometheus_org{{ item }}"
             cluster_id: "{{ cluster_id }}"
             project_group: monitoring_prometheus
             project: "{{project_name}}"
+            organisation_index: "{{ item }}"
          vpc_subnet_id: "{{subnet_id}}"
          assign_public_ip: yes
+      with_items:
+        - "{{ range(organisations_count)|list }}"
       register: ec2monitoring_prometheus
 #
     - name: Create grafana
@@ -159,12 +162,15 @@
         region: "{{ region }}"
         count: 1
         instance_tags:
-          Name: "{{project_name}}_monitoring_grafana"
+          Name: "{{project_name}}_monitoring_grafana_org{{ item }}"
           cluster_id: "{{ cluster_id }}"
           project_group: monitoring_grafana
           project: "{{project_name}}"
+          organisation_index: "{{ item }}"
         vpc_subnet_id: "{{subnet_id}}"
         assign_public_ip: yes
+      with_items:
+        - "{{ range(organisations_count)|list }}"
       register: ec2monitoring_grafana
     #
     - name: Create elk
@@ -236,7 +242,7 @@
         delay: 15
         timeout: 100
         state: started
-      with_items: "{{ ec2monitoring_prometheus.instances + ec2monitoring_grafana.instances}}"
+      with_items: "{{ ec2monitoring_prometheus['results']|map(attribute='instances')|list + ec2monitoring_grafana['results']|map(attribute='instances')|list}}"
 
 #
 - name: Refresh inventory to have the actual one (before install basic stuff)

@@ -19,6 +19,11 @@
     src: "{{crypto_config_path}}/ordererOrganizations/{{domain}}/orderers/{{node_name}}.{{domain}}/tls"
     dest: "{{ ansible_env.HOME}}/{{node_name}}"
 
+- name: copy orderer.yaml
+  synchronize:
+    src: "../templates/orderer.yaml"
+    dest: "{{ ansible_env.HOME}}/{{node_name}}"
+
 - debug: var=etc_hosts
 
 - name: start single orderer
@@ -37,7 +42,7 @@
       - "{{api_port}}:7050"
       - "{{operations_port}}:{{operations_port}}"
     env:
-      ORDERER_GENERAL_LOGLEVEL: debug
+      FABRIC_LOGGING_SPEC: debug
       ORDERER_GENERAL_LISTENADDRESS: 0.0.0.0
       ORDERER_GENERAL_GENESISMETHOD: file
       ORDERER_GENERAL_GENESISFILE: /var/hyperledger/orderer/orderer.genesis.block
@@ -49,12 +54,19 @@
       ORDERER_GENERAL_TLS_ROOTCAS: "[/var/hyperledger/orderer/tls/ca.crt]"
       ORDERER_OPERATIONS_LISTENADDRESS: "0.0.0.0:{{operations_port}}"
       ORDERER_METRICS_PROVIDER: prometheus
+      ORDERER_OPERATIONS_TLS_ENABLED: true
+      ORDERER_OPERATIONS_TLS_PRIVATEKEY: /var/hyperledger/orderer/tls/server.key
+      ORDERER_OPERATIONS_TLS_CERTIFICATE: /var/hyperledger/orderer/tls/server.crt
+      ORDERER_OPERATIONS_TLS_CLIENTROOTCAS: "[/var/hyperledger/orderer/tls/ca.crt]"
+      ORDERER_OPERATIONS_TLS_CLIENTAUTHREQUIRED: true
     command: orderer
     recreate: yes
     volumes:
       - "{{ ansible_env.HOME }}/{{node_name}}/channel-artifacts/genesis.block:/var/hyperledger/orderer/orderer.genesis.block"
       - "{{ ansible_env.HOME }}/{{node_name}}/msp:/var/hyperledger/orderer/msp"
       - "{{ ansible_env.HOME }}/{{node_name}}/tls:/var/hyperledger/orderer/tls"
+      # Having orderer.yaml here is workaround for bug in this file in fabric 1.4. It lacks ClientRootCAs variable
+      - "{{ ansible_env.HOME}}/{{node_name}}/orderer.yaml:/etc/hyperledger/fabric/orderer.yaml"
 
 - name: start orderer
   when: not single_orderer
@@ -94,12 +106,19 @@
       ORDERER_GENERAL_TLS_ROOTCAS: "[/var/hyperledger/orderer/tls/ca.crt]"
       ORDERER_OPERATIONS_LISTENADDRESS: "0.0.0.0:{{operations_port}}"
       ORDERER_METRICS_PROVIDER: prometheus
+      ORDERER_OPERATIONS_TLS_ENABLED: true
+      ORDERER_OPERATIONS_TLS_PRIVATEKEY: /var/hyperledger/orderer/tls/server.key
+      ORDERER_OPERATIONS_TLS_CERTIFICATE: /var/hyperledger/orderer/tls/server.crt
+      ORDERER_OPERATIONS_TLS_CLIENTROOTCAS: "[/var/hyperledger/orderer/tls/ca.crt]"
+      ORDERER_OPERATIONS_TLS_CLIENTAUTHREQUIRED: true
     command: orderer
     recreate: yes
     volumes:
       - "{{ ansible_env.HOME }}/{{node_name}}/channel-artifacts/genesis.block:/var/hyperledger/orderer/orderer.genesis.block"
       - "{{ ansible_env.HOME }}/{{node_name}}/msp:/var/hyperledger/orderer/msp"
       - "{{ ansible_env.HOME }}/{{node_name}}/tls:/var/hyperledger/orderer/tls"
+      # Having orderer.yaml here is workaround for bug in this file in fabric 1.4. It lacks ClientRootCAs variable
+      - "{{ ansible_env.HOME}}/{{node_name}}/orderer.yaml:/etc/hyperledger/fabric/orderer.yaml"
 #    log_driver: gelf
 #    log_options:
 #      gelf-address: udp://{{ hostvars[groups['elk'][0]]['ansible_host'] }}:12201
