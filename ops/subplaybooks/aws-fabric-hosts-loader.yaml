@@ -92,12 +92,24 @@
     - name: Add monitoring to host group
       when: monitoring_enabled
       add_host:
-        hostname: "monitoring{{item.0}}"
+        hostname: "monitoring_prometheus{{item.0}}"
         ansible_host: "{{ item.1 }}"
-        groupname: monitoring
+        groupname: monitoring_prometheus
         ansible_ssh_private_key_file: "{{pem_path}}"
         ansible_ssh_user: "{{user_name}}"
-      with_indexed_items: "{{ groups['tag_project_group_monitoring']|list }}"
+        organisation_index: "{{ hostvars[item.1]['ec2_tag_organisation_index'] }}"
+      with_indexed_items: "{{ groups['tag_project_group_monitoring_prometheus']|list }}"
+
+    - name: Add monitoring to host group
+      when: monitoring_enabled
+      add_host:
+        hostname: "monitoring_grafana{{item.0}}"
+        ansible_host: "{{ item.1 }}"
+        groupname: monitoring_grafana
+        ansible_ssh_private_key_file: "{{pem_path}}"
+        ansible_ssh_user: "{{user_name}}"
+        organisation_index: "{{ hostvars[item.1]['ec2_tag_organisation_index'] }}"
+      with_indexed_items: "{{ groups['tag_project_group_monitoring_grafana']|list }}"
 
     - name: Add ELK to host group
       when: elk_enabled

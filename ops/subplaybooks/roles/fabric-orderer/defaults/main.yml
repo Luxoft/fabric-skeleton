@@ -7,3 +7,4 @@ channel_artifacts_path: ../../../../network/channel-artifacts
 api_port: 7050
 container_state: started
 kafka_port: 9092
+operations_port: 9443

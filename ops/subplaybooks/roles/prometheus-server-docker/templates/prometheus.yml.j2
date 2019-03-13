@@ -6,15 +6,44 @@ global:
   external_labels:
     monitor: 'codelab-monitor'
 
-# A scrape configuration containing exactly one endpoint to scrape:
-# Here it's Prometheus itself.
 scrape_configs:
-{% for item in scrape_configs %}
+  - job_name: prometheus
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['localhost:9090']
+
+{% for item in scrape_configs_peers %}
 {% if item.name is defined %}
 
   - job_name: {{ item.name }}
 
     scrape_interval: {{ item.scrape_interval | default('5s') }}
+    scheme: https
+    tls_config:
+      ca_file: /etc/prometheus/tls/ca.pem
+      cert_file: /etc/prometheus/tls/server.crt
+      key_file: /etc/prometheus/tls/server.key
+      #Workaround for the fact that ip address is different each time on amazon in testing environment. For real usage some constant ip/names should be used
+      insecure_skip_verify: true
+
+    static_configs:
+      - targets: {{ item.targets | to_json  }}
+
+{% endif %}
+{% endfor %}
+{% for item in scrape_configs_orderers %}
+{% if item.name is defined %}
+
+  - job_name: {{ item.name }}
+
+    scrape_interval: {{ item.scrape_interval | default('5s') }}
+    scheme: https
+    tls_config:
+      ca_file: /etc/prometheus/tls/orderer_ca.pem
+      cert_file: /etc/prometheus/tls/orderer_server.crt
+      key_file: /etc/prometheus/tls/server.key
+      #Workaround for the fact that ip address is different each time on amazon in testing environment. For real usage some constant ip/names should be used
+      insecure_skip_verify: true
 
     static_configs:
       - targets: {{ item.targets | to_json  }}

@@ -20,7 +20,7 @@ group_id: Blockchain-Fabric
 
 when_exists: crush # one of [crush, skip_starter, none], to stop whole deployment, skip aws starter or deploy as usual
 
-monitoring_enabled: False # to start blockchain monitoring stack
+monitoring_enabled: true # to start blockchain monitoring stack
 elk_enabled: False # to start external logging stack on ELK
 
 # fabric network configs

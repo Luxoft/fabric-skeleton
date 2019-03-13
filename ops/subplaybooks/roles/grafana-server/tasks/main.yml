@@ -1,0 +1,32 @@
+---
+- file:
+    path: ~/grafana/provisioning/dashboards
+    state: directory
+- file:
+    path: ~/grafana/provisioning/datasources
+    state: directory
+    
+- name: Generate datasouce config file
+  template:
+    src: "{{ role_path }}/templates/provisioning/datasources/prometheus.yaml.j2"
+    dest: ~/grafana/provisioning/datasources/prometheus.yaml
+
+- name: Copy dashboard configs
+  copy:
+    src: "{{ role_path }}/templates/provisioning/dashboards/"
+    dest: ~/grafana/provisioning/dashboards/
+  
+- name: Create grafana container
+  docker_container:
+    name: grafana
+    image: grafana/grafana:5.4.3
+    env:
+      GF_SECURITY_ADMIN_PASSWORD: secret
+      GF_PATHS_PROVISIONING: /etc/grafana/provisioning/
+    volumes:
+      - ./grafana/provisioning/:/etc/grafana/provisioning/
+    timeout: 360
+    restart_policy: always
+    restart: yes
+    ports:
+      - 3000:3000/tcp

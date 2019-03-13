@@ -1,3 +1,8 @@
 ---
 # defaults file for prometheus-server-docker
-scrape_configs: "{{[{'name': 'prometheus', 'targets':['localhost:9090']}]}} + {{[{'name':'ethereum', 'targets': groups['eth_exporter']|default([])|map('regex_replace', '^(?P<host>.+)$','\\g<host>:9101')|list + groups['eth_exporter']|default([])|map('regex_replace', '^(?P<host>.+)$','\\g<host>:9100')|list }]}}"
+scrape_configs_peers: "{{ [ { 'name':'fabric peers', 'targets':groups['tag_project_group_peers']|default([])|map('regex_replace','^(.*)$','\\1:9443') |list} ] }} "
+scrape_configs_orderers: "{{ [ { 'name':'fabric orderers', 'targets':groups['tag_project_group_orderers']|default([])|map('regex_replace','^(.*)$','\\1:9443') |list} ] }}"
+node_name: "prometheus.organisation{{organisation_index}}"
+domain: luxoft.com
+crypto_config_path: ../../../../network/crypto-config
+organisation_index: "0"

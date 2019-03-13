@@ -1,9 +1,37 @@
 # Prometheus + Graphana stack for monitoring
 ---
-#- hosts: monitoring[0]
-#  roles:
-#    - prometheus-server-docker
+- name: Calculate nice network_dir path
+  hosts: localhost
+  tasks:
+    - set_fact:
+        actual_network_dir: "{% if network_dir[0] == '/' or network_dir[0] == '~' %}{{network_dir}}{% else %}../{{network_dir}}{% endif %}"
+      when: network_dir is defined
+    - set_fact:
+        actual_network_dir: "../network_dist"
+      when: network_dir is not defined
 
-#- hosts: monitoring[0]
-#  roles:
-#    - grafana-server
+- name: Copy generator for prometheus script into network_dist
+  hosts: localhost
+  tasks:
+    - template: src=../generator/generatePrometheusCryptoConfig.sh dest=../network_dist/generatePrometheusCryptoConfig.sh mode=a+rwx
+
+- name: Run generatePrometheusCryptoConfig.sh script
+  hosts: localhost
+  tasks:
+    - shell: "./generatePrometheusCryptoConfig.sh {{ organisations_count }}"
+      args:
+        chdir: ../network_dist
+
+- hosts: monitoring_prometheus
+  roles:
+    - prometheus-server-docker
+  vars:
+    scrape_configs_peers: "{{ [ { 'name':'fabric peers', 'targets':groups['tag_project_group_peers']|default([])|map('regex_replace','^(.*)$','\\1:9443') |list} ] }}"
+    scrape_configs_orderers: "{{ [ { 'name':'fabric orderers', 'targets':groups['tag_project_group_orderers']|default([])|map('regex_replace','^(.*)$','\\1:9443') |list} ] }}"
+    crypto_config_path: "{{ hostvars['localhost']['actual_network_dir'] }}/crypto-config"
+
+- hosts: monitoring_grafana
+  roles:
+    - grafana-server
+  vars:
+    prometheus_endpoint: "http://{{ groups['tag_project_group_monitoring_prometheus'][0] }}:9090"

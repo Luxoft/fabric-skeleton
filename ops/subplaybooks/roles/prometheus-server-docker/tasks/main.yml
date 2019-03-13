@@ -1,4 +1,13 @@
 ---
+- name: debug
+  debug:
+    msg: "cryptoConfigPath={{crypto_config_path}}, organisation_index = {{organisation_index}}, node_name {{ node_name}}"
+
+- name: copy tls
+  synchronize:
+    src: "{{crypto_config_path}}/prometheusOrganizations/organisation{{organisation_index}}.{{domain}}/tls"
+    dest: "{{ ansible_env.HOME}}/{{node_name}}"
+
 - file:
     path: ~/prometheus/
     state: directory
@@ -11,13 +20,12 @@
 - name: Create prometheus container
   docker_container:
     name: prometheus
-    image: prom/prometheus
-    published_ports:
-      - 9090:9090/tcp
+    image: prom/prometheus:v2.7.1
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - "{{ ansible_env.HOME }}/{{node_name}}/tls:/etc/prometheus/tls/"
     timeout: 360
     restart_policy: always
     restart: yes
     ports:
-      - 9090:9090
+      - 9090:9090/tcp

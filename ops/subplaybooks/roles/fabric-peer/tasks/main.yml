@@ -71,6 +71,13 @@
       CORE_PEER_TLS_CERT_FILE: /etc/hyperledger/fabric/tls/server.crt
       CORE_PEER_TLS_KEY_FILE: /etc/hyperledger/fabric/tls/server.key
       CORE_PEER_TLS_ROOTCERT_FILE: /etc/hyperledger/fabric/tls/ca.crt
+      CORE_OPERATIONS_LISTENADDRESS: "0.0.0.0:{{operations_port}}"
+      CORE_METRICS_PROVIDER: prometheus
+      CORE_OPERATIONS_TLS_ENABLED: true
+      CORE_OPERATIONS_TLS_KEY_FILE: /etc/hyperledger/fabric/tls/server.key
+      CORE_OPERATIONS_TLS_CERT_FILE: /etc/hyperledger/fabric/tls/server.crt
+      CORE_OPERATIONS_TLS_CLIENTAUTHREQUIRED: true
+      CORE_OPERATIONS_TLS_CLIENTROOTCAS_FILES: /etc/hyperledger/fabric/tls/ca.crt
 #      CORE_LEDGER_STATE_STATEDATABASE: CouchDB
 #      CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS: "{{node_name}}.couchdb:5984"
     etc_hosts: "{{ etc_hosts }}"
@@ -88,12 +95,12 @@
     ports:
       - "{{api_port}}:7051"
       - "{{events_port}}:7053"
-
+      - "{{operations_port}}:{{operations_port}}"
 - name: Wait some time while peer works
   command: sleep 5
 - name: Execute docker ps
   command: docker ps -q
   register: peer_docker_status
 - fail:
-    msg: "Docker container for business node is not alive"
+    msg: "Docker container for peer node is not alive"
   when: peer_docker_status.stdout == ""

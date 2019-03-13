@@ -1,17 +1,37 @@
 Role Name
 =========
 
-A brief description of the role goes here.
+This role is rolling out prometheus server which gathers metrics from peers and orderers.
 
 Requirements
 ------------
 
-Any pre-requisites that may not be covered by Ansible itself or the role should be mentioned here. For instance, if the role uses the EC2 module, it may be a good idea to mention in this section that the boto package is required.
+In order to enable TLS connection to peers and orderers this role is expecting that here will be following folder available with keys and certs
+
+`{{crypto_config_path}}/prometheusOrganizations/organisation{{organisation_index}}.{{domain}}/tls'`
+
+- server.key - prometheus server private key
+- ca.pem - the same ca as used in peer tls configuration
+- orderer_ca.pem - the same ca as used in orderer tls configuration
+- server.crt - prometheus certificate signed by peer ca
+- orderer_server.crt - - prometheus certificate signed by orderer ca
+
+Apart from that peers and orderers must be configured to provide prometheus metrics over TLS:
+
+See https://hyperledger-fabric.readthedocs.io/en/release-1.4/operations_service.html for details.
+
 
 Role Variables
 --------------
 
-A description of the settable variables for this role should go here, including any variables that are in defaults/main.yml, vars/main.yml, and any variables that can/should be set via parameters to the role. Any variables that are read from other roles and/or the global scope (ie. hostvars, group vars, etc.) should be mentioned here as well.
+scrape_configs_peers:  - config with scraped peers
+scrape_configs_orderers: - config with scrapped orderers
+node_name:  - template for node name
+domain: - domain
+crypto_config_path: - path where crypto-config is located
+organisation_index:  - default organisation index
+
+      
 
 Dependencies
 ------------
@@ -23,14 +43,13 @@ Example Playbook
 
 Including an example of how to use your role (for instance, with variables passed in as parameters) is always nice for users too:
 
-    - hosts: servers
+    - hosts: monitoring_prometheus
       roles:
-         - { role: username.rolename, x: 42 }
-
-License
--------
-
-BSD
+        - prometheus-server-docker
+      vars:
+        scrape_configs_peers: "{{ [ { 'name':'fabric peers', 'targets':groups['tag_project_group_peers']|default([])|map('regex_replace','^(.*)$','\\1:9443') |list} ] }}"
+        scrape_configs_orderers: "{{ [ { 'name':'fabric orderers', 'targets':groups['tag_project_group_orderers']|default([])|map('regex_replace','^(.*)$','\\1:9443') |list} ] }}"
+        crypto_config_path: "{{ hostvars['localhost']['actual_network_dir'] }}/crypto-config"
 
 Author Information
 ------------------
