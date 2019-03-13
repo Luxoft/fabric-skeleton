@@ -51,11 +51,6 @@ Including an example of how to use your role (for instance, with variables passe
         scrape_configs_orderers: "{{ [ { 'name':'fabric orderers', 'targets':groups['tag_project_group_orderers']|default([])|map('regex_replace','^(.*)$','\\1:9443') |list} ] }}"
         crypto_config_path: "{{ hostvars['localhost']['actual_network_dir'] }}/crypto-config"
 
-License
--------
-
-BSD
-
 Author Information
 ------------------
 
