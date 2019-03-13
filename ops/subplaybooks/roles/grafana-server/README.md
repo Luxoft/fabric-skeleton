@@ -33,11 +33,6 @@ Including an example of how to use your role (for instance, with variables passe
       vars:
         prometheus_endpoint: http://"{{ groups['tag_project_group_monitoring_prometheus'][0] }}:9090"
 
-License
--------
-
-BSD
-
 Author Information
 ------------------
 
