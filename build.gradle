@@ -45,7 +45,7 @@ allprojects {
 }
 
 dependencies {
-    compile 'com.github.Luxoft:fabric-utils:1.4.0'
+    compile 'com.github.Luxoft:fabric-utils:1.4.2'
 
     compile "io.grpc:grpc-protobuf:${grpcVersion}"
     compile "com.google.protobuf:protobuf-java:${protoVersion}"

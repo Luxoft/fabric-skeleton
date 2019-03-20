@@ -9,16 +9,22 @@ import java.util.concurrent.CompletableFuture;
 
 
 
-public class SkeletonBlockchainConnector extends FabricConnector {
+public class SkeletonBlockchainConnector {
+
+    private final FabricConnector fabricConnector;
 
     private static final String TEST_CHAINCODE_NAME = "testchaincode";
 
     public SkeletonBlockchainConnector(User user, String channelName, FabricConfig fabricConfig) throws Exception {
-        super(user, channelName, fabricConfig);
+        fabricConnector = FabricConnector.getFabricConfigBuilder(fabricConfig)
+                .withUser(user)
+                .withDefaultChannelName(channelName)
+                .build();
+
     }
 
     public CompletableFuture<TestChaincode.GetEntity> putEntity(TestChaincode.Entity entity) {
-        return invoke("PutEntity", TEST_CHAINCODE_NAME, new byte[][]{entity.toByteArray()})
+        return fabricConnector.invoke("PutEntity", TEST_CHAINCODE_NAME, new byte[][]{entity.toByteArray()})
                 .thenApply(transactionEvent -> {
 
                     if (transactionEvent == null || !transactionEvent.isValid()) throw new RuntimeException("Transaction failure");
@@ -39,7 +45,7 @@ public class SkeletonBlockchainConnector extends FabricConnector {
     }
 
     public CompletableFuture<TestChaincode.Entity> getEntity(TestChaincode.GetEntity eventId) {
-        return query("GetEntity", TEST_CHAINCODE_NAME, eventId.toByteArray()).thenApply((query) -> {
+        return fabricConnector.query("GetEntity", TEST_CHAINCODE_NAME, eventId.toByteArray()).thenApply((query) -> {
             try {
                 return TestChaincode.Entity.parseFrom(query);
             } catch (InvalidProtocolBufferException e) {
@@ -49,7 +55,7 @@ public class SkeletonBlockchainConnector extends FabricConnector {
     }
 
     public CompletableFuture<TestChaincode.History> getBalanceHistory(TestChaincode.GetEntity message) {
-        return query("GetHistory", TEST_CHAINCODE_NAME, message.toByteArray()).thenApply((query) -> {
+        return fabricConnector.query("GetHistory", TEST_CHAINCODE_NAME, message.toByteArray()).thenApply((query) -> {
             try {
                 return TestChaincode.History.parseFrom(query);
             } catch (InvalidProtocolBufferException e) {
